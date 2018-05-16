@@ -1,4 +1,41 @@
-﻿<!DOCTYPE html>
+﻿@using CmsWeb.Code
+@using CmsData.Classes.RoleChecker
+@using CmsWeb.Controllers
+@using CmsWeb.Models
+@{
+    var hideNavTabs = RoleChecker.HasSetting(SettingName.HideNavTabs, false);
+    var access = User.IsInRole("Access");
+    var customHeaderImage = CustomHeader.HeaderImage("~/Content/touchpoint/img/logo.png");
+    var customSmallHeaderImage = CustomHeader.SmallHeaderImage("~/Content/touchpoint/img/logo_sm.png");
+    var menuaddpeople = DbUtil.Db.Setting("MenuAddPeople", true) || Util.IsDebug();
+    var recentOrgs = Util2.MostRecentOrgs;
+
+    <!-- for Admin nav-->
+    var admin = User.IsInRole("Admin");
+    var developer = User.IsInRole("Developer");
+    var manageemails = User.IsInRole("ManageEmails");
+    var managetrans = User.IsInRole("ManageTransactions");
+    var edit = User.IsInRole("Edit");
+    var sendsms = User.IsInRole("SendSms");
+    var manageResources = User.IsInRole("ManageResources");
+    var design = User.IsInRole("Design");
+    var finance = User.IsInRole("Finance") && ((string)Session["testnofinance"]) != "true";
+    var financedataentry = User.IsInRole("FinanceDataEntry");
+    var financeviewonly = User.IsInRole("FinanceViewOnly");
+    const bool financetrue = true;
+    const bool financefalse = false;
+    var deposititems = ScriptModel.CustomDepositImportMenuItems();
+    <!-- End for Admin Nav -->
+    <!-- for REPORTS nav-->
+    var c1 = ReportsMenuModel.CustomItems1;
+    var c2 = ReportsMenuModel.CustomItems2;
+    var c3 = ReportsMenuModel.Items;
+    var ncols = 1
+                + (c1.HasValue() ? 1 : 0)
+                + (c2.HasValue() ? 1 : 0);
+    <!-- end REPORTS nav-->
+}
+<!DOCTYPE html>
 <html lang="@System.Globalization.CultureInfo.CurrentUICulture.Name">
 <head>
     <link rel="shortcut icon" href="@Url.Content("~/favicon.ico?v=2")">
@@ -14,41 +51,663 @@
     @Fingerprint.Css("/Content/touchpoint/lib/bootstrap-multiselect/css/bootstrap-multiselect.css")
     @Fingerprint.Css("/Content/touchpoint/lib/bootstrap-sweetalert/css/sweetalert.css")
     @Fingerprint.CssPrint("/Content/touchpoint/css/print.css")
+
     <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
     <!--[if lt IE 9]>
       <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
       <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
     <![endif]-->
     @RenderSection("head", false)
+
+    <style>
+    #thumbnail-picture {
+        float: left;
+        height: 25px;
+        width: 25px;
+        display: inline-block;
+        background-repeat: no-repeat;
+        background-size: cover;
+        background-position: @Util.UserThumbPictureBgPosition;
+        margin-top: -3px;
+        background-image: url(@Util.UserThumbPictureUrl);
+    }
+        /*custom to allow for separate TP icon logo on mobile devices*/
+    .logo-mobile {
+        width: 70px;
+        height: 50px;
+        background-size: contain;
+        background-repeat: no-repeat;
+        background-position: left;
+        background-image: url(https://image.ibb.co/eyq7WJ/TP_logo_full_yellow.png);
+        margin: auto;
+        /* END custom to allow for separate TP icon logo on mobile devices*/
+    }
+    .logo-sm, .logo-sm-no-nav {
+        margin-left: 15px;
+        width: 243px;
+        height: 50px;
+        background-size: contain; /*revert back to auto*/
+        background-repeat: no-repeat;
+        background-position: left;
+        background-image: url(https://image.ibb.co/dSwpad/TP_logo_icon_white.png); /*will need to revert this back to allow custom logos*/
+        margin: auto;
+    }
+
+    .logo-md, {
+        width: 70px;
+        height: 50px;
+        background-size: contain; /*revert back to auto*/
+        background-repeat: no-repeat;
+        background-position: left;
+        background-image: url(https://image.ibb.co/dSwpad/TP_logo_icon_white.png); /*will need to revert this back to allow custom logo*/
+        margin: auto;
+    }
+
+    .logo-lg {
+        width: 243px;
+        height: 50px;
+        background-size: contain;
+        background-repeat: no-repeat;
+        background-position: left;
+        background-image: url(https://preview.ibb.co/cAXUad/TP_logo_full_white.png));
+        margin: auto;
+    }
+
+    @@media (max-width: 330px) {
+        .logo-lg {
+            display: none !important;
+        }
+        .logo-sm {
+            display: none !important;
+        }
+        .logo-md {
+            margin-left: 0px;
+            display: block !important;
+        }
+    }
+    </style>
 </head>
 <body>
-    @Html.Partial("NavBar")
-    @Html.Partial("PageHeader")
-    <div class="container-fluid" id="main">
-        @Html.Partial("Notices")
-        @RenderBody()
-    </div>
-    @Html.Partial("PageFooter")
-    <div class="device-lg visible-lg-block"></div>
-    <div class="device-md visible-md-block"></div>
-    <div class="device-sm visible-sm-block"></div>
-    <div class="device-xs visible-xs-block"></div>
-    <div class="device-2xs"></div>
-    <div class="modal fade" id="empty-dialog" data-keyboard="false" data-backdrop="static"></div>
-    @ViewExtensions2.GoogleAnalytics()
-    @ViewExtensions2.jQuery()
-    @ViewExtensions2.LoDash()
-    @ViewExtensions2.Bootstrap3()
-    @Fingerprint.Script("/Content/touchpoint/lib/jquery-ui-custom/js/jquery-ui.min.js")
-    @ViewExtensions2.Velocity()
-    @ViewExtensions2.Moment()
-    @Fingerprint.Script("/Content/touchpoint/lib/jquery-globalize/js/globalize.js")
-    <script src="@Url.Content(ViewExtensions2.jqueryGlobalizeCulture)" type="text/javascript"></script>
-    @ViewExtensions2.jQueryValidation()
-    @Html.Partial("DatePickerDefaults2")
-    @Fingerprint.Script("/Content/touchpoint/js/app.min.js")
-    @Fingerprint.Script("/Content/touchpoint/lib/bootstrap-multiselect/js/bootstrap-multiselect.js")
-    @RenderSection("scripts", false)
-    @Html.Partial("SearchBox")
-</body>
+    <div class="wrapper">
+        <nav id="sidebar-Custom" class="active">
+            <!-- Sidebar Header -->
+            <div class="sidebar-header">
+                @if (access)
+        {
+                <div class="navbar-header hidden-sm hidden-xs">
+
+                    <a href="/">
+                        <div class="logo-lg hidden-lg hidden-md hidden-sm hidden-xs"></div>
+                        <div class="logo-md hidden-lg hidden-xs"></div>
+                        <div class="logo-sm hidden-md hidden-sm"></div>
+                    </a>
+                    
+                </div>
+}
+else
+{
+        <div class="navbar-header">
+            <a href="/">
+                <div class="logo-lg hidden-xs"></div>
+                <div class="logo-sm-no-nav hidden-lg hidden-md hidden-sm"></div>
+            </a>
+        </div>
+}
+
+
+                <!-- Sidebar Links -->
+        <ul class="components">
+ 
+            <li id="people">
+                <a href="#PeopleSubmenu" data-toggle="collapse" aria-expanded="false" class="collapsed">
+                    <i class="glyphicon glyphicon-user"></i>
+                    People
+                </a>
+                <ul class="list-unstyled collapse" id="PeopleSubmenu">
+                    <li class="col-sm-12">
+                        <ul>
+                            <li class="list-unstyled">Find People</li>
+                            <li><a href="#" data-toggle="modal" data-target="#search-box">Quick Search</a></li>
+                            @Helper.LiAnchorLink("Basic Search", "/PeopleSearch")
+                            <li class="list-unstyled">Search Builder Query</li>
+                            @Helper.LiAnchorLink("New Search", "/NewQuery")
+                            @Helper.LiAnchorLink("Last Search", "/Query")
+                            @Helper.LiAnchorLink("Saved Searches", "/SavedQueryList")
+                            @Helper.LiAnchorLink("All Records", "/Query/-All-")
+                            <li class="list-unstyled">Other</li>
+                            @Helper.LiAnchorLink("Church Picture Directory", "/PictureDirectory")
+
+                            <li class="list-unstyled">Manage People</li>
+                            @Helper.LiAnchorLink("Contacts", "/ContactSearch2/")
+                            @Helper.LiAnchorLink("Tags", "/Tags/")
+                            @Helper.LiAnchorLink("Tasks", "/TaskSearch")
+                            @if (menuaddpeople)
+                    {
+                        <li><a href="/SearchAdd2/Dialog/Menu" class="searchadd">Add Person</a></li>
+            }
+                            @Helper.LiAnchorLink("Add Person", "http://docs.touchpointsoftware.com/SearchAdd/AddPeopleContext.html", !menuaddpeople, "_blank")
+                            @{
+                        var recentPeople = Util2.MostRecentPeople;
+                            }
+                            @if (recentPeople.Any())
+                    {
+                        <li class="list-unstyled">Recently Viewed</li>
+                foreach (var p in Util2.MostRecentPeople)
+                {
+                    @Helper.LiAnchorLink(p.Name, "/Person2/" + p.Id)
+        }
+    }
+                            <li class="list-unstyled">My Record</li>
+                            @Helper.LiAnchorLink(Util.UserFullName, "/Person2/" + Util.UserPeopleId)
+                        </ul>
+                    </li>
+                </ul>
+            </li>
+            <!-- BEGIN GROUPS ------------------------------------------------------------------------ -->
+            <li id="groups">
+                <a href="#GroupsSubmenu" data-toggle="collapse" aria-expanded="false">
+                    <i class="glyphicon glyphicon-home"></i>
+                    Groups
+                </a>
+                <ul class="collapse list-unstyled" id="GroupsSubmenu">
+                    <li class="col-sm-12">
+                        <ul>
+                            <li class="list-unstyled">Manage Groups</li>
+                            @Helper.LiAnchorLink("Search", "/OrgSearch/")
+                            @if (User.IsInRole("Edit"))
+                    {
+                        <li>@Helper.JQueryIdLink("Add New Organization", "addorg")</li>
+            }
+                            @Helper.LiAnchorLink("Coupons", "/Coupon/List", User.IsInRole("Coupon"))
+                            @Helper.LiAnchorLink("Org Members", "/OrgMembers/", display: User.IsInRole("ManageOrgMembers"))
+                            @Helper.LiAnchorLink("Promotion", "/Promotion/", User.IsInRole("ManageOrgMembers"))
+                        </ul>
+
+                        <ul>
+                            @if (recentOrgs.Any())
+                    {
+                        <li class="list-unstyled">Recently Viewed</li>
+                foreach (var o in Util2.MostRecentOrgs)
+                {
+                    @Helper.LiAnchorLink(o.Name, "/Org/" + o.Id)
+        }
+    }
+                        </ul>
+                    </li>
+                </ul>
+            </li>
+            <!----------- BEGIN FORMS ------------------->
+            <li id="forms">
+                <a href="#EventsSubmenu" data-toggle="collapse" aria-expanded="false">
+                    <i class="glyphicon glyphicon-calendar"></i>
+                    Forms
+                </a>
+                <ul class="collapse list-unstyled" id="EventsSubmenu">
+                    <li class="col-sm-12">
+                        <ul>
+                            <li class="list-unstyled">Manage Forms</li>
+                            @Helper.LiAnchorLink("Search", "/OrgSearch/")
+                            @if (User.IsInRole("Edit"))
+                    {
+                        <li>@Helper.JQueryIdLink("Add New Organization", "addorg")</li>
+            }
+                            @Helper.LiAnchorLink("Coupons", "/Coupon/List", User.IsInRole("Coupon"))
+                            @Helper.LiAnchorLink("Org Members", "/OrgMembers/", display: User.IsInRole("ManageOrgMembers"))
+                            @Helper.LiAnchorLink("Promotion", "/Promotion/", User.IsInRole("ManageOrgMembers"))
+                        </ul>
+
+                        <ul>
+                            @if (recentOrgs.Any())
+                    {
+                        <li class="list-unstyled">Recently Viewed</li>
+                foreach (var o in Util2.MostRecentOrgs)
+                {
+                    @Helper.LiAnchorLink(o.Name, "/Org/" + o.Id)
+        }
+    }
+                        </ul>
+                    </li>
+                </ul>
+            </li>
+            <!----------- BEGIN FINANCE ------------------->
+            <li id="finance">
+                <a href="#FinanceSubmenu" data-toggle="collapse" aria-expanded="false">
+                    <i class="glyphicon glyphicon-stats"></i>
+                    Financials
+                </a>
+
+                <ul class="collapse list-unstyled" id="FinanceSubmenu">
+                    <li class="col-sm-12">
+                        <ul>
+                            <li class="list-unstyled">Contributions</li>
+                            @Helper.LiAnchorLink("Search", "/OrgSearch/")
+                            @if (User.IsInRole("Edit"))
+                    {
+                        <li>@Helper.JQueryIdLink("Add New Organization", "addorg")</li>
+            }
+                            @Helper.LiAnchorLink("Coupons", "/Coupon/List", User.IsInRole("Coupon"))
+                            @Helper.LiAnchorLink("Org Members", "/OrgMembers/", display: User.IsInRole("ManageOrgMembers"))
+                            @Helper.LiAnchorLink("Promotion", "/Promotion/", User.IsInRole("ManageOrgMembers"))
+                        </ul>
+
+                        <ul>
+                            @if (recentOrgs.Any())
+                    {
+                        <li class="list-unstyled">Registrations</li>
+                foreach (var o in Util2.MostRecentOrgs)
+                {
+                    @Helper.LiAnchorLink(o.Name, "/Org/" + o.Id)
+        }
+    }
+                        </ul>
+                    </li>
+                </ul>
+            </li>
+            <!--- BEGIN REPORTS =======================  -->
+            <li id="reports">
+                <a href="#ReportsSubmenu" data-toggle="collapse" aria-expanded="false">
+                    <i class="glyphicon glyphicon-duplicate"></i>
+                    Reports
+                </a>
+                @switch (ncols)
+        {
+            case 1:
+                <ul class="collapse list-unstyled" id="ReportsSubmenu">
+                    <li class="col-sm-12">
+                        <ul>
+                            @Column(c3)
+                        </ul>
+                    </li>
+                </ul>
+        break;
+    case 2:
+        <ul class="collapse list-unstyled" id="ReportsSubmenu">
+            <li class="col-sm-12">
+                <ul>
+                    @Column(c1)
+                    @Column(c2)
+                </ul>
+            </li>
+            <li class="col-sm-12">
+                <ul>
+                    @Column(c3)
+                </ul>
+            </li>
+        </ul>
+break;
+case 3:
+        <ul class="collapse list-unstyled" id="ReportsSubmenu">
+            <li class="col-sm-12">
+                <ul>
+                    @Column(c1)
+                </ul>
+            </li>
+            <li class="col-sm-12">
+                <ul>
+                    @Column(c2)
+                </ul>
+            </li>
+            <li class="col-sm-12">
+                <ul>
+                    @Column(c3)
+                </ul>
+            </li>
+        </ul>
+break;
+}
+                @helper Column(string c)
+            {
+        if (c.HasValue())
+        {
+            @Html.Raw(c)
+}
+}
+            </li>
+            <!-- BEGIN SETTINGS ------------------------------------------------------------------------------------------------------ -->
+            <li id="settings">
+                <a href="#SettingsSubmenu" data-toggle="collapse" aria-expanded="false">
+                    <i class="glyphicon glyphicon-cog"></i>
+                    Settings
+                </a>
+                @if (admin || manageemails || managetrans || edit || design || finance || manageResources || financedataentry || financeviewonly)
+        {
+
+            <ul class="collapse list-unstyled" id="SettingsSubmenu">
+                <li class="col-sm-12">
+                    <ul>
+                        <li class="list-unstyled">Contributions</li>
+                        @Helper.LiAnchorLink("Bundles", "/Bundles/")
+                        @Helper.LiAnchorLink("Search", "/Contributions/")
+                        @Helper.LiAnchorLink("Statements (Create All)", "/Statements/", true)
+                        @Helper.LiAnchorLink("Deposits Totals", "/FinanceReports/DepositTotalsForDates/")
+                        @Helper.LiAnchorLink("Totals by Fund", "/FinanceReports/TotalsByFund/")
+                        <li class="list-unstyled">Manage</li>
+                        @if (deposititems.Count == 0)
+                {
+                    @Helper.LiAnchorLink("Batch Upload Contributions", "/PostBundle/Batch/")
+        }
+                        @foreach (var i in deposititems)
+                {
+                    @Helper.LiAnchorLink(i.Value, "/PyScriptForm/" + i.Key)
+        }
+                        @Helper.LiAnchorLink("Fund Management", "/Funds/")
+                        @Helper.LiAnchorLink("Managed Giving", "/FinanceReports/ManagedGiving/")
+                        <li class="list-unstyled">Reports</li>
+                        <li>
+                            <a href='/FinanceReports/DonorTotalSummary' class="dialog-options" data-target="/FinanceReports/DonorTotalSummaryOptions">Donor Total Summary Export</a>
+                        </li>
+                        @Helper.LiAnchorLink("Pledge Report", "/FinanceReports/PledgeReport/")
+                        <li class="list-unstyled">Range Reports</li>
+                        @Helper.LiAnchorLink("Donor Totals by Range", "/FinanceReports/DonorTotalsByRange/")
+                        @Helper.LiAnchorLink("Totals by Age Range", "/FinanceReports/TotalsByFundAgeRange/")
+                        @Helper.LiAnchorLink("Totals by Fund Range", "/FinanceReports/TotalsByFundRange/")
+                        @Helper.LiAnchorLink("Pledge Totals by Fund Range", "/FinanceReports/TotalsByFundRange/?pledged=true")
+                    </ul>
+                </li>
+                <li class="col-sm-12">
+                    <ul>
+                        @AdminList2(admin, design, managetrans, edit, manageemails, financetrue, developer, manageResources, sendsms, financedataentry)
+                    </ul>
+                </li>
+                <li class="col-sm-12">
+                    <ul>
+                        @AdminList1(admin, design, managetrans, edit, manageemails, financetrue, developer)
+                    </ul>
+                </li>
+            </ul>
+}
+else if (financeviewonly)
+{
+        <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+            <span class="visible-xs-inline"><i class="fa fa-cogs"></i>&nbsp;&nbsp;</span><span class="hidden-lg hidden-xs">Admin</span><span class="visible-lg-inline visible-xs-inline">Administration</span> <b class="caret"></b>
+        </a>
+if (admin || manageemails || managetrans || edit || design || manageResources || financedataentry)
+{
+        <ul id="admin-menu-col-1" class="dropdown-menu dropdown-menu-large row">
+            <li class="col-sm-12">
+                <ul>
+                    <li class="list-unstyled">Contributions</li>
+                    @Helper.LiAnchorLink("Deposits Totals", "/FinanceReports/DepositTotalsForDates/")
+                    <li class="list-unstyled">Reports</li>
+                    <li>
+                        <a href='/FinanceReports/DonorTotalSummary' class="dialog-options" data-target="/FinanceReports/DonorTotalSummaryOptions">Donor Total Summary Export</a>
+                    </li>
+                    @Helper.LiAnchorLink("Pledge Report", "/FinanceReports/PledgeReport/")
+                    <li class="list-unstyled">Range Reports</li>
+                    @Helper.LiAnchorLink("Donor Totals by Range", "/FinanceReports/DonorTotalsByRange/")
+                    @Helper.LiAnchorLink("Totals by Age Range", "/FinanceReports/TotalsByFundAgeRange/")
+                    @Helper.LiAnchorLink("Totals by Fund Range", "/FinanceReports/TotalsByFundRange/")
+                    @Helper.LiAnchorLink("Pledge Totals by Fund Range", "/FinanceReports/TotalsByFundRange/?pledged=true")
+                </ul>
+            </li>
+            <li class="col-sm-12">
+                <ul>
+                    @AdminList2(admin, design, managetrans, edit, manageemails, financefalse, developer, manageResources, sendsms, financedataentry)
+                </ul>
+            </li>
+            <li class="col-sm-12">
+                <ul>
+                    @AdminList1(admin, design, managetrans, edit, manageemails, financefalse, developer)
+                </ul>
+            </li>
+        </ul>
+}
+else
+{
+        <ul id="admin-menu-col-1" class="dropdown-menu dropdown-menu-large menu-1col row">
+            <li class="col-sm-12">
+                <ul>
+                    <li class="list-unstyled">Contributions</li>
+                    @Helper.LiAnchorLink("Deposits Totals", "/FinanceReports/DepositTotalsForDates/")
+                    <li class="list-unstyled">Reports</li>
+                    <li>
+                        <a href='/FinanceReports/DonorTotalSummary' class="dialog-options" data-target="/FinanceReports/DonorTotalSummaryOptions">Donor Total Summary Export</a>
+                    </li>
+                    @Helper.LiAnchorLink("Pledge Report", "/FinanceReports/PledgeReport/")
+                    <li class="list-unstyled">Range Reports</li>
+                    @Helper.LiAnchorLink("Donor Totals by Range", "/FinanceReports/DonorTotalsByRange/")
+                    @Helper.LiAnchorLink("Totals by Age Range", "/FinanceReports/TotalsByFundAgeRange/")
+                    @Helper.LiAnchorLink("Totals by Fund Range", "/FinanceReports/TotalsByFundRange/")
+                    @Helper.LiAnchorLink("Pledge Totals by Fund Range", "/FinanceReports/TotalsByFundRange/?pledged=true")
+                </ul>
+            </li>
+        </ul>
+}
+}
+else
+{
+        <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+            <span class="visible-xs-inline"><i class="fa fa-cogs"></i>&nbsp;&nbsp;</span><span class="hidden-lg hidden-xs">Admin</span><span class="visible-lg-inline visible-xs-inline">Administration</span> <b class="caret"></b>
+        </a>
+        <ul id="admin-menu-col-2" class="dropdown-menu dropdown-menu-large row">
+            <li class="col-sm-6">
+                <ul>
+                    @AdminList2(admin, design, managetrans, edit, manageemails, financefalse, developer, manageResources, sendsms, financedataentry)
+                </ul>
+            </li>
+            <li class="col-sm-6">
+                <ul>
+                    @AdminList1(admin, design, managetrans, edit, manageemails, financefalse, developer)
+                </ul>
+            </li>
+        </ul>
+}
+
+
+                @helper AdminList1(bool admin, bool design, bool managetrans, bool edit, bool manageemails, bool finance, bool developer)
+            {
+        if (admin)
+        {
+        <li class="list-unstyled">Batch Actions</li>
+        @Helper.LiAnchorLink("Find Duplicates", "/Duplicates/Find")
+        @Helper.LiAnchorLink("Tag People Ids", "/Batch/TagPeopleIds")
+        @Helper.LiAnchorLink("Update Fields from a Tag/Query", "/Batch/UpdateFields")
+        @Helper.LiAnchorLink("Update Organizations", "/Batch/UpdateOrg")
+        @Helper.LiAnchorLink("Update Status Flags", "/Batch/UpdateStatusFlags")
+        @Helper.LiAnchorLink("Upload Addresses", "/Batch/UploadAddresses")
+if (User.IsInRole("developer"))
+{
+        <li>
+            <a href="/ValidateAddress" class="longrunop">Validate Address for a Tag/Query</a>
+        </li>
+        <li>
+            <a href="/Batch/OtherDeveloperActions">Other Developer Actions</a>
+        </li>
+}
+}
+if (admin || finance || design)
+{
+        <li class="list-unstyled">Setup</li>
+}
+        @Helper.LiAnchorLink("Lookup Codes", "/Lookups/", admin || finance)
+        @Helper.LiAnchorLink("Promotion", "/PromotionSetup/", admin)
+        @Helper.LiAnchorLink("Settings", "/Settings/", admin)
+        @Helper.LiAnchorLink("Special Content", "/Display/", admin || design)
+        @Helper.LiAnchorLink("Twilio", "/Twilio/", admin)
+        @Helper.LiAnchorLink("Zip Codes", "/MetroZips/", admin)
+if (admin)
+{
+        <li class="list-unstyled">Reports</li>
+}
+        @Helper.LiAnchorLink("Duplicates Find Result", "/Duplicates", admin)
+        @Helper.LiAnchorLink("Registration History", "/RegistrationSearch", admin)
+        @Helper.LiAnchorLink("Registration Summary", "/Reports/RegistrationSummary?days=90", admin)
+}
+
+                @helper AdminList2(bool admin, bool design, bool managetrans, bool edit, bool manageemails, bool finance, bool developer, bool manageResources, bool sendsms, bool financedataentry)
+            {
+        if (admin)
+        {
+            <li class="list-unstyled">Groups</li>
+            @Helper.LiAnchorLink("Divisions", "/Divisions/")
+            @Helper.LiAnchorLink("Programs", "/Programs/")
+            @Helper.LiAnchorLink("Promotion", "/Promotion/")
+}
+if (admin || manageemails || managetrans || finance || sendsms)
+{
+        <li class="list-unstyled">Communication</li>
+        @Helper.LiAnchorLink("Emails", "/Emails/", admin || manageemails || finance)
+        @Helper.LiAnchorLink("SMS Messages", "/SMS/List/", admin || sendsms)
+        @Helper.LiAnchorLink("Transactions", "/Transactions/", admin || managetrans || finance)
+        @Helper.LiAnchorLink("User Email Delegation", "/UsersCanEmailFor/", admin || manageemails)
+}
+if (manageResources && DbUtil.Db.Setting("Resources-Enabled"))
+{
+        <li class="list-unstyled">Resources</li>
+        @Helper.LiAnchorLink("Resource Types", "/ResourceTypes/")
+        @Helper.LiAnchorLink("Resource Categories", "/ResourceCategories/")
+        @Helper.LiAnchorLink("Resources", "/Resources/")
+}
+if (admin || edit)
+{
+        <li class="list-unstyled">Misc</li>
+        @Helper.LiAnchorLink("Activity Log", "/LastActivity/", admin)
+        @Helper.LiAnchorLink("Checkin Activity", "/CheckinTimes/")
+        @Helper.LiAnchorLink("Checkin Labels", "/CheckinLabels", admin)
+        @Helper.LiAnchorLink("Users", "/Users/", admin)
+}
+if (financedataentry)
+{
+        @Helper.LiAnchorLink("Bundles", "/Bundles/")
+}
+}
+                </li>
+            </ul>
+                </div>
+            <div class="col-md-12">
+                
+            </div>
+            </nav>
+
+            <div id="content">
+
+                <nav class="navbar navbar-default hidden-print">
+                    
+                    <div class="container-fluid">
+                        @if (access)
+                        {
+                            <div class="navbar-header">
+                                <button type="button" class="user-icon navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                                    <span class="sr-only">Toggle navigation</span>
+                                    <span class="glyphicon glyphicon-user"></span>
+                                </button>
+  
+
+                                    <a href="/" class="hidden-md hidden-lg" style="float: left;">
+                                        <div class="logo-mobile"></div>
+    
+                                    </a>
+
+                                    <button type="button" id="sidebarCollapse" class="btn btn-info navbar-btn">
+                                        <span class="">
+                                            <i class="glyphicon glyphicon-align-justify"></i>
+                                            <span class="">Menu</span>
+                                        </span>
+                                    </button>
+                            </div>
+                            <div id="navbar" class="navbar-collapse collapse">
+                                @if (!hideNavTabs)
+                                {
+
+                                }
+                                <ul id="tagstop" class="nav navbar-nav navbar-right">
+                                    @if (!hideNavTabs)
+                                    {
+                                        <li class="hidden-xs"><a href="#" data-toggle="modal" data-target="#search-box" id="search-button"><i class="fa fa-search"></i><span class="visible-lg-inline visible-xs-inline">&nbsp;&nbsp;Search</span></a></li>
+                                        <li class="dropdown">
+                                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                                                <div class="truncate" style="max-width: 130px;">
+                                                    <span class="currentTag username"><i class="fa fa-tag"></i>&nbsp;&nbsp;<span id="current-tag1" class="visible-lg-inline visible-xs-inline">@Util2.CurrentTagName</span></span> <span class="caret"></span>
+                                                </div>
+                                            </a>
+                                            <ul id="tag-dropdown" class="dropdown-menu">
+                                                <li><a href="/Tags"><b><i id="current-tag2">@Util2.CurrentTagName</i></b></a></li>
+                                                <li><a class="cleartag" href="/Tags/ClearTag"><i>Empty Active Tag</i></a></li>
+                                                @{
+                                                    var userTags = CodeValueModel.UserTags();
+                                                }
+                                                @if (userTags.Any())
+                                                {
+                                                    <li class="divider"></li>
+                                                    <li class="dropdown-header">User Tags</li>
+                                                    foreach (var t in userTags)
+                                                    {
+                                                        <li><a href="/Home/SwitchTag?tag=@t.Code">@t.Value</a></li>
+                                                    }
+                                                }
+                                            </ul>
+                                        </li>
+                                    }
+                                    <li class="dropdown">
+                                        @Html.Partial("Menu/User")
+                                    </li>
+                                    @if (!hideNavTabs)
+                                    {
+                                        <li>@Html.Partial("Menu/Help")</li>
+                                    }
+                                </ul>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="navbar-header">
+                                <a href="/">
+                                    <div class="logo-lg hidden-xs"></div>
+                                    <div class="logo-sm-no-nav hidden-lg hidden-md hidden-sm"></div>
+                                </a>
+                            </div>
+                        }
+
+                    </div>
+                </nav>
+
+                @Html.Partial("PageHeader")
+                <div class="container-fluid" id="main">
+                    @Html.Partial("Notices")
+                    @RenderBody()
+                </div>
+
+            </div>
+        </div>
+
+
+
+        @Html.Partial("PageFooter")
+        <div class="device-lg visible-lg-block"></div>
+        <div class="device-md visible-md-block"></div>
+        <div class="device-sm visible-sm-block"></div>
+        <div class="device-xs visible-xs-block"></div>
+        <div class="device-2xs"></div>
+        <div class="modal fade" id="empty-dialog" data-keyboard="false" data-backdrop="static"></div>
+        @ViewExtensions2.GoogleAnalytics()
+        @ViewExtensions2.jQuery()
+        @ViewExtensions2.LoDash()
+        @ViewExtensions2.Bootstrap3()
+        @Fingerprint.Script("/Content/touchpoint/lib/jquery-ui-custom/js/jquery-ui.min.js")
+        @ViewExtensions2.Velocity()
+        @ViewExtensions2.Moment()
+        @Fingerprint.Script("/Content/touchpoint/lib/jquery-globalize/js/globalize.js")
+        <script src="@Url.Content(ViewExtensions2.jqueryGlobalizeCulture)" type="text/javascript"></script>
+        @ViewExtensions2.jQueryValidation()
+        @Html.Partial("DatePickerDefaults2")
+        @Fingerprint.Script("/Content/touchpoint/js/app.min.js")
+        @Fingerprint.Script("/Content/touchpoint/lib/bootstrap-multiselect/js/bootstrap-multiselect.js")
+        @RenderSection("scripts", false)
+        @Html.Partial("SearchBox")
+
+        <script type="text/javascript">
+            $(document).ready(function () {
+
+                $('#sidebarCollapse').on('click', function () {
+                    $('#sidebar-Custom').toggleClass('active');
+                    $('.logo-lg').toggleClass('hidden-lg');
+                    $('.logo-sm').toggleClass('hidden-lg');
+                    $('.nav-btns').toggleClass('hidden');
+                    $('.open-menu').toggleClass('hidden');
+                    $('.close-menu').toggleClass('hidden');
+                });
+
+            });
+        </script>
+    </body>
 </html>
