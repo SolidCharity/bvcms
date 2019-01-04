@@ -1,12 +1,11 @@
+using CmsData;
+using CmsData.Codes;
+using CmsData.Registration;
 using System;
 using System.Linq;
-using CmsData;
-using CmsData.Registration;
-using UtilityExtensions;
 using System.Text;
 using System.Web;
-using CmsData.Codes;
-using CmsData.View;
+using UtilityExtensions;
 
 namespace CmsWeb.Areas.OnlineReg.Models
 {
@@ -17,10 +16,14 @@ namespace CmsWeb.Areas.OnlineReg.Models
             var om = GetOrganizationMember(transaction);
 
             if (Parent.SupportMissionTrip)
+            {
                 return AddSender(om);
+            }
 
             if (RecordFamilyAttendance())
+            {
                 return RecordAllFamilyAttends(om);
+            }
 
             om.Amount = TotalAmount();
 
@@ -29,18 +32,45 @@ namespace CmsWeb.Areas.OnlineReg.Models
             DoLinkGroupsFromOrgs(om);
             LogRegistrationOnOrgMember(transaction, om, payLink);
 
+            OnEnroll(om);
             DbUtil.Db.SubmitChanges();
             return om;
         }
 
-        private static string DefaultMessage => DbUtil.Db.ContentHtml("DefaultConfirmation", 
+        public string ScriptResults { get; set; }
+
+        public void OnEnroll(OrganizationMember om)
+        {
+            if (!setting.OnEnrollScript.HasValue())
+            {
+                return;
+            }
+
+            var pe = new PythonModel(Util.Host);
+            BuildDynamicData(pe, om);
+#if DEBUG
+            if (setting.OnEnrollScript == "debug")
+            {
+                ScriptResults =
+                    PythonModel.ExecutePython(@"c:\dev\onregister.py", pe, fromFile: true);
+                return;
+            }
+#endif
+            var script = DbUtil.Db.ContentOfTypePythonScript(setting.OnEnrollScript);
+            ScriptResults = PythonModel.ExecutePython(script, pe);
+        }
+
+        private static string DefaultMessage => DbUtil.Db.ContentHtml("DefaultConfirmation",
                 Resource1.SettingsRegistrationModel_DefaulConfirmation);
 
         public string SummaryTransaction()
         {
             var ts = Parent.TransactionSummary();
             if (ts == null)
+            {
                 return "";
+            }
+
             var summary = DbUtil.Db.RenderTemplate(@"
 <table>
     <tr>
@@ -68,12 +98,17 @@ namespace CmsWeb.Areas.OnlineReg.Models
             var payLink = GetPayLink();
             var body = settings[org.OrganizationId].Body;
             if (masterorgid.HasValue && !body.HasValue())
+            {
                 body = settings[masterorgid.Value].Body;
+            }
+
             var message = Util.PickFirst(body, DefaultMessage);
 
             var location = org.Location;
             if (!location.HasValue() && masterorg != null)
+            {
                 location = masterorg.Location;
+            }
 
             message = CmsData.API.APIOrganization.MessageReplacements(DbUtil.Db,
                 person, org.DivisionName, org.OrganizationId, org.OrganizationName, location, message);
@@ -84,10 +119,15 @@ namespace CmsWeb.Areas.OnlineReg.Models
                 .Replace("{paid}", ts?.TotPaid.ToString("c"))
                 .Replace("{sessiontotal}", ts?.TotPaid.ToString("c"));
             if (ts?.TotDue > 0)
+            {
                 message = message.Replace("{paylink}",
                     $"<a href='{payLink}'>Click this link to make a payment on your balance of {ts.TotDue:C}</a>.");
+            }
             else
+            {
                 message = message.Replace("{paylink}", "You have a zero balance.");
+            }
+
             return message;
         }
 
@@ -95,7 +135,10 @@ namespace CmsWeb.Areas.OnlineReg.Models
         public string GetPayLink()
         {
             if (cachedPayLink.HasValue())
+            {
                 return cachedPayLink;
+            }
+
             var estr = HttpUtility.UrlEncode(Util.Encrypt(Parent.Transaction.OriginalId.ToString()));
             return cachedPayLink = DbUtil.Db.ServerLink("/OnlineReg/PayAmtDue?q=" + estr);
         }
@@ -113,7 +156,9 @@ namespace CmsWeb.Areas.OnlineReg.Models
                 sb.AppendFormat("{0:c} applied to this registrant\n", AmountToPay());
                 sb.AppendFormat("{0:c} total due all registrants\n", transaction.Amtdue);
                 if (others.HasValue())
+                {
                     sb.AppendFormat("Others: {0}\n", others);
+                }
             }
             om.AddToMemberDataBelowComments(sb.ToString());
 
@@ -146,14 +191,18 @@ namespace CmsWeb.Areas.OnlineReg.Models
             if (setting.LinkGroupsFromOrgs.Count > 0)
             {
                 var q = from omt in DbUtil.Db.OrgMemMemTags
-                    where setting.LinkGroupsFromOrgs.Contains(omt.OrgId)
-                    where omt.PeopleId == om.PeopleId
-                    select omt.MemberTag.Name;
+                        where setting.LinkGroupsFromOrgs.Contains(omt.OrgId)
+                        where omt.PeopleId == om.PeopleId
+                        select omt.MemberTag.Name;
                 foreach (var name in q)
+                {
                     om.AddToGroup(DbUtil.Db, name);
+                }
             }
             if (om.Organization.IsMissionTrip == true)
+            {
                 om.AddToGroup(DbUtil.Db, "Goer");
+            }
         }
 
         private void SaveAgeGroupChoice(OrganizationMember om)
@@ -161,16 +210,26 @@ namespace CmsWeb.Areas.OnlineReg.Models
             if (setting.TargetExtraValues)
             {
                 foreach (var ag in setting.AgeGroups)
+                {
                     person.RemoveExtraValue(DbUtil.Db, ag.SmallGroup);
+                }
+
                 if (setting.AgeGroups.Count > 0)
+                {
                     person.AddEditExtraCode(AgeGroup(), "true");
+                }
             }
             else
             {
                 foreach (var ag in setting.AgeGroups)
+                {
                     om.RemoveFromGroup(DbUtil.Db, ag.SmallGroup);
+                }
+
                 if (setting.AgeGroups.Count > 0)
+                {
                     om.AddToGroup(DbUtil.Db, AgeGroup());
+                }
             }
         }
 
@@ -180,6 +239,7 @@ namespace CmsWeb.Areas.OnlineReg.Models
 
             var reg = person.SetRecReg();
             foreach (var ask in setting.AskItems)
+            {
                 switch (ask.Type)
                 {
                     case "AskSize":
@@ -233,15 +293,29 @@ namespace CmsWeb.Areas.OnlineReg.Models
                         break;
                     case "AskExtraQuestions":
                         foreach (var g in ExtraQuestion[ask.UniqueId])
+                        {
                             if (g.Value.HasValue())
-                                if (setting.TargetExtraValues)
+                            {
+                                if (setting.TargetExtraValues || ((AskExtraQuestions)ask).TargetExtraValue == true)
+                                {
                                     person.AddEditExtraText(g.Key, g.Value);
+                                }
+                            }
+                        }
+
                         break;
                     case "AskText":
                         foreach (var g in Text[ask.UniqueId])
+                        {
                             if (g.Value.HasValue())
-                                if (setting.TargetExtraValues)
+                            {
+                                if (setting.TargetExtraValues || ((AskText)ask).TargetExtraValue == true)
+                                {
                                     person.AddEditExtraText(g.Key, g.Value);
+                                }
+                            }
+                        }
+
                         break;
                     case "AskMenu":
                         SaveMenuChoices(om, ask);
@@ -253,6 +327,7 @@ namespace CmsWeb.Areas.OnlineReg.Models
                         SaveGradeChoice(om);
                         break;
                 }
+            }
         }
 
         private void SaveSMSChoice()
@@ -267,7 +342,9 @@ namespace CmsWeb.Areas.OnlineReg.Models
         private void SaveGradeChoice(OrganizationMember om)
         {
             if (setting.TargetExtraValues)
+            {
                 person.Grade = gradeoption.ToInt();
+            }
             else
             {
                 om.Grade = gradeoption.ToInt();
@@ -278,31 +355,52 @@ namespace CmsWeb.Areas.OnlineReg.Models
 
         private void SaveDropdownChoice(OrganizationMember om, Ask ask)
         {
-            if (setting.TargetExtraValues)
+            var askdd = ask as AskDropdown;
+            if (askdd == null)
             {
-                foreach (var op in ((AskDropdown) ask).list)
+                return;
+            }
+
+            if (setting.TargetExtraValues || askdd.TargetExtraValue == true)
+            {
+                foreach (var op in askdd.list)
+                {
                     person.RemoveExtraValue(DbUtil.Db, op.SmallGroup);
-                person.AddEditExtraCode(((AskDropdown) ask).SmallGroupChoice(option).SmallGroup, "true");
+                }
+
+                person.AddEditExtraCode(askdd.SmallGroupChoice(option).SmallGroup, "true");
             }
             else
             {
-                foreach (var op in ((AskDropdown) ask).list)
+                foreach (var op in askdd.list)
+                {
                     op.RemoveFromSmallGroup(DbUtil.Db, om);
-                ((AskDropdown) ask).SmallGroupChoice(option).AddToSmallGroup(DbUtil.Db, om, PythonModel);
+                }
+
+                askdd.SmallGroupChoice(option).AddToSmallGroup(DbUtil.Db, om, PythonModel);
             }
         }
 
         private void SaveMenuChoices(OrganizationMember om, Ask ask)
         {
-            foreach (var i in MenuItem[ask.UniqueId])
-                om.AddToGroup(DbUtil.Db, i.Key, i.Value);
+            var askmn = ask as AskMenu;
+            if (askmn == null)
             {
-                var menulabel = ((AskMenu) ask).Label;
-                foreach (var i in ((AskMenu) ask).MenuItemsChosen(MenuItem[ask.UniqueId]))
+                return;
+            }
+
+            foreach (var i in MenuItem[ask.UniqueId])
+            {
+                om.AddToGroup(DbUtil.Db, i.Key, i.Value);
+            }
+
+            {
+                var menulabel = askmn.Label;
+                foreach (var i in askmn.MenuItemsChosen(MenuItem[ask.UniqueId]))
                 {
                     om.AddToMemberDataBelowComments(menulabel);
-                    var desc = i.amt > 0 
-                        ? $"{i.number} {i.desc} (at {i.amt:N2})" 
+                    var desc = i.amt > 0
+                        ? $"{i.number} {i.desc} (at {i.amt:N2})"
                         : $"{i.number} {i.desc}";
                     om.AddToMemberDataBelowComments(desc);
                     menulabel = string.Empty;
@@ -312,37 +410,65 @@ namespace CmsWeb.Areas.OnlineReg.Models
 
         private void SaveCheckboxChoices(OrganizationMember om, Ask ask)
         {
-            if (setting.TargetExtraValues)
+            var askcb = ask as AskCheckboxes;
+            if (askcb == null)
             {
-                foreach (var ck in ((AskCheckboxes) ask).list)
+                return;
+            }
+
+            if (setting.TargetExtraValues || askcb.TargetExtraValue == true)
+            {
+                foreach (var ck in askcb.list)
+                {
                     person.RemoveExtraValue(DbUtil.Db, ck.SmallGroup);
-                foreach (var g in ((AskCheckboxes) ask).CheckboxItemsChosen(Checkbox))
+                }
+
+                foreach (var g in askcb.CheckboxItemsChosen(Checkbox))
+                {
                     person.AddEditExtraBool(g.SmallGroup, true);
+                }
             }
             else
             {
-                foreach (var ck in ((AskCheckboxes) ask).list)
+                foreach (var ck in askcb.list)
+                {
                     ck.RemoveFromSmallGroup(DbUtil.Db, om);
-                foreach (var i in ((AskCheckboxes) ask).CheckboxItemsChosen(Checkbox))
+                }
+
+                foreach (var i in askcb.CheckboxItemsChosen(Checkbox))
+                {
                     i.AddToSmallGroup(DbUtil.Db, om, PythonModel);
+                }
             }
         }
 
         private void SaveYesNoChoices(OrganizationMember om, Ask ask)
         {
-            if (setting.TargetExtraValues == false)
+            var askyn = ask as AskYesNoQuestions;
+            if (askyn == null)
             {
-                foreach (var yn in ((AskYesNoQuestions) ask).list)
+                return;
+            }
+
+            if (setting.TargetExtraValues || askyn.TargetExtraValue == true)
+            {
+                foreach (var g in YesNoQuestion)
+                {
+                    person.AddEditExtraCode(g.Key, g.Value == true ? "Yes" : "No");
+                }
+            }
+            else
+            {
+                foreach (var yn in askyn.list)
                 {
                     om.RemoveFromGroup(DbUtil.Db, "Yes:" + yn.SmallGroup);
                     om.RemoveFromGroup(DbUtil.Db, "No:" + yn.SmallGroup);
                 }
                 foreach (var g in YesNoQuestion)
+                {
                     om.AddToGroup(DbUtil.Db, (g.Value == true ? "Yes:" : "No:") + g.Key);
+                }
             }
-            else
-                foreach (var g in YesNoQuestion)
-                    person.AddEditExtraCode(g.Key, g.Value == true ? "Yes" : "No");
         }
 
         private OrganizationMember GetOrganizationMember(Transaction transaction)
@@ -351,7 +477,10 @@ namespace CmsWeb.Areas.OnlineReg.Models
             var om = OrganizationMember.InsertOrgMembers(DbUtil.Db, org.OrganizationId, person.PeopleId,
                 membertype, Util.Now, null, false);
             if (om.TranId == null)
+            {
                 om.TranId = transaction.OriginalId;
+            }
+
             om.RegisterEmail = EmailAddress;
             om.RegistrationDataId = Parent.DatumId;
             Log("JoinedOrg");
@@ -361,7 +490,10 @@ namespace CmsWeb.Areas.OnlineReg.Models
         private static OrganizationMember AddSender(OrganizationMember om)
         {
             if (!om.IsInGroup("Goer"))
+            {
                 om.MemberTypeId = MemberTypeCode.InActive;
+            }
+
             om.AddToGroup(DbUtil.Db, "Sender");
             return om;
         }
@@ -373,13 +505,19 @@ namespace CmsWeb.Areas.OnlineReg.Models
             foreach (var fm in FamilyAttend)
             {
                 if (fm.PeopleId == -1)
+                {
                     continue;
+                }
+
                 Person pp = null;
                 OrganizationMember omm = null;
                 if (!fm.PeopleId.HasValue && fm.Attend)
                 {
                     if (!fm.Name.HasValue())
+                    {
                         continue;
+                    }
+
                     string first, last;
                     Util.NameSplit(fm.Name, out first, out last);
                     if (!first.HasValue())
@@ -406,8 +544,10 @@ namespace CmsWeb.Areas.OnlineReg.Models
                 {
                     pp = DbUtil.Db.LoadPersonById(fm.PeopleId ?? 0);
                     if (fm.Attend)
+                    {
                         omm = OrganizationMember.InsertOrgMembers(DbUtil.Db, org.OrganizationId, pp.PeopleId,
                             MemberTypeCode.Member, DateTime.Now, null, false);
+                    }
                     else
                     {
                         omm = OrganizationMember.Load(DbUtil.Db, pp.PeopleId, org.OrganizationId);
@@ -415,11 +555,19 @@ namespace CmsWeb.Areas.OnlineReg.Models
                     }
                 }
                 if (omm == null)
+                {
                     continue;
+                }
+
                 if (fm.Attend)
+                {
                     omm.AddToGroup(DbUtil.Db, "Attending");
+                }
+
                 if (!fm.PeopleId.HasValue)
+                {
                     omm.AddToGroup(DbUtil.Db, "Added");
+                }
             }
             return om;
         }
@@ -427,8 +575,13 @@ namespace CmsWeb.Areas.OnlineReg.Models
         public string AgeGroup()
         {
             foreach (var i in setting.AgeGroups)
+            {
                 if (person.Age >= i.StartAge && person.Age <= i.EndAge)
+                {
                     return i.SmallGroup;
+                }
+            }
+
             return string.Empty;
         }
     }

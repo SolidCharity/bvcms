@@ -30,7 +30,7 @@ namespace CmsWeb.Code
                 Code = "0"
             }
         };
-
+        public CodeValueModel() { }
         public List<CodeValueItem> Activities()
         {
             var q = from a in DbUtil.Db.CheckInActivities
@@ -399,6 +399,25 @@ namespace CmsWeb.Code
             var list = q.ToList();
             list.Insert(0, new CodeValueItem { Id = 0, Value = "(not specified)" });
             return list;
+        }
+
+        public IEnumerable<CodeValueItem> FundsScopedByRoleMembership()
+        {
+            const int openFundStatusId = 1;
+
+            return DbUtil.Db.ContributionFunds.ScopedByRoleMembership()
+                .Where(fund => fund.FundStatusId == openFundStatusId)
+                .OrderBy(fund => fund.FundId)
+                .Select(fund => new CodeValueItem { Id = fund.FundId, Value = fund.FundName })
+                .ToList();
+        }
+
+        public IEnumerable<CodeValueItem> FundsScopedByRoleMembershipWithUnspecified()
+        {
+            var funds = new List<CodeValueItem>(FundsScopedByRoleMembership());
+            funds.Insert(0, new CodeValueItem { Id = 0, Value = "(not specified)" });
+
+            return funds;
         }
 
         public IEnumerable<CodeValueItem> GenderCodes()

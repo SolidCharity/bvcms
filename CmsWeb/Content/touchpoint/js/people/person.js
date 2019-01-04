@@ -64,6 +64,18 @@
         });
     });
 
+    $('body').on('click', '#promoteToHeadOfHousehold', function (ev) {
+        ev.preventDefault();
+        var href = $(this).attr("href");
+        bootbox.confirm("Are you sure you want to make this person the head of the household?", function (result) {
+            if (result === true) {
+                $.post(href, {}, function (ret) {
+                    window.location = ret;
+                });
+            }
+        });
+    });
+
     $('body').on('click', '#deletePerson', function (ev) {
         ev.preventDefault();
         var href = $(this).attr("href");
@@ -627,6 +639,14 @@
             $('#role-list input[value="Access"]').prop('checked', true);
         } else {
             $('#myDataUserRole').prop('checked', true);
+        }
+        var viewVolApp = $('#role-list input[value="ViewVolunteerApplication"]');
+        var appRev = $('#role-list input[value="ApplicationReview"]');
+        if ($(this).attr('value') == appRev.attr('value')) {    
+            viewVolApp.prop('checked', false);
+        }
+        if ($(this).attr('value') == viewVolApp.attr('value')) {
+            appRev.prop('checked', false);
         }
     });
 

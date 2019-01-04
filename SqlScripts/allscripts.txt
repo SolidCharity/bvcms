@@ -545,6 +545,8 @@ Creating_dbo_MembersWhoAttendedOrgs.sql
 Creating_dbo_GetMostRecentIncompleteRegistration.sql
 Creating_dbo_RollList.sql
 Creating_dbo_NextChangeTransactionId.sql
+Creating_dbo_TotalPaid.sql
+Creating_dbo_MissionTripTotals.sql
 Creating_dbo_GetPeopleIdFromIndividualNumber.sql
 Creating_dbo_OrgFilterPeople.sql
 Creating_dbo_ChangeDetails.sql
@@ -554,6 +556,7 @@ Creating_dbo_LastAddrElement.sql
 Creating_dbo_TrackOpen.sql
 Creating_dbo_LinkEnrollmentTransaction.sql
 Creating_dbo_LinkEnrollmentTransactions.sql
+Creating_dbo_GivingChangeQuartersFund2.sql
 Creating_dbo_OrgFilterIds.sql
 Creating_dbo_PrevAddress.sql
 Creating_dbo_EmailLinks.sql
@@ -561,12 +564,14 @@ Creating_pk_PK_EmailLinks_dbo_EmailLinks.sql
 Creating_dbo_TrackClick.sql
 Creating_triggerdbo_insEnrollmentTransaction_dbo_EnrollmentTransaction.sql
 Creating_dbo_AttendUpdateN.sql
+Creating_dbo_RecentGiverFunds.sql
 Creating_dbo_UserPeopleIdFromEmail.sql
 Creating_dbo_OrgFilterCheckedCount.sql
 Creating_dbo_OrgMembersGroupFiltered.sql
 Creating_dbo_UpdateAllAttendN.sql
 Creating_dbo_FirstActivity.sql
 Creating_dbo_City.sql
+Creating_dbo_CHAIDonationsReport.sql
 Creating_dbo_CleanOrgFilters.sql
 Creating_dbo_GetTodaysMeetingId.sql
 Creating_dbo_GetAttendedTodaysMeeting.sql
@@ -634,9 +639,7 @@ Creating_dbo_DownlineDetails.sql
 Creating_dbo_PledgeReport.sql
 Creating_dbo_PurgeAllPeopleInCampus.sql
 Creating_dbo_DownlineSummary.sql
-Creating_dbo_TotalPaid.sql
 Creating_dbo_VisitNumberSinceDate.sql
-Creating_dbo_MissionTripTotals.sql
 Creating_dbo_GivingCurrentPercentOfFormer.sql
 Creating_dbo_DownlineLevels.sql
 Creating_dbo_RegisterLinksFromMaster.sql

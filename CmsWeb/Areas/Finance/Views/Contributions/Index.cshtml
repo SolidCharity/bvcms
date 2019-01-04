@@ -6,7 +6,7 @@
     ViewBag.Title = "Contributions";
     ViewBag.PageHeader = "Contributions";
     Layout = ViewExtensions2.TouchPointLayout();
-    var customFundsList = ContributionStatements.CustomFundSetSelectList();
+    var customFundsList = ContributionStatements.CustomFundSetSelectList(DbUtil.Db); //hack: using static method to get db for now
 }
 <div class="box box-responsive">
     <div class="box-content">
@@ -31,7 +31,8 @@
                     </div>
                     <div class="col-lg-3 col-md-3 col-sm-6">
                         <div class="form-group">
-                            <a tabindex="0" href="#" data-toggle="popover" data-placement="bottom" data-trigger="focus" data-title="Notes" data-content="Check # or phrase or contribution id."><i class="fa fa-info-circle"></i></a>&nbsp;
+                            <a tabindex="0" href="#" data-toggle="popover" data-placement="bottom" data-trigger="focus" data-title="Notes"
+                               data-content="Check # or phrase or contribution id.<br>Or Meta:searchphrase"><i class="fa fa-info-circle"></i></a>&nbsp;
                             <label for="SearchInfo_Comments" class="control-label">Notes</label>
                             @Html.TextBoxFor(vv => vv.SearchInfo.Comments, new { @class = "form-control" })
                         </div>

@@ -152,13 +152,16 @@ namespace CmsData.API
 
         public IQueryable<Contribution> FetchContributions()
         {
+            // There is a SQL version of this search that should work the same way.
+            // it is called ContributionSearch
+
             if (contributions != null)
                 return contributions;
 
             if (!model.TaxNonTax.HasValue())
                 model.TaxNonTax = "TaxDed";
 
-            contributions = db.Contributions.AsQueryable();
+            contributions = db.Contributions.Join(db.ContributionFunds.ScopedByRoleMembership(), c => c.FundId, cf => cf.FundId, (c, cf) => c);
 
             if (!model.IncludeUnclosedBundles)
                 contributions = from c in contributions
@@ -267,7 +270,11 @@ namespace CmsData.API
                                 where c.Person.Name.Contains(model.Name)
                                 select c;
 
-            if (model.Comments.HasValue())
+            if(model.Comments?.StartsWith("Meta:") == true)
+                contributions = from c in contributions
+                                where c.MetaInfo.StartsWith(model.Comments.Substring(5))
+                                select c;
+            else if (model.Comments.HasValue())
                 contributions = from c in contributions
                                 where c.ContributionDesc.Contains(model.Comments)
                                       || c.CheckNo == model.Comments
@@ -312,7 +319,7 @@ namespace CmsData.API
             }
             if (model.FundSet.HasValue())
             {
-                var funds = GetCustomFundSetList(model.FundSet);
+                var funds = GetCustomFundSetList(db, model.FundSet);
                 if(funds != null)
                     contributions = from c in contributions
                                     where funds.Contains(c.FundId)
@@ -344,14 +351,16 @@ namespace CmsData.API
                 return null;
             return ret;
         }
-        public static List<int> GetCustomStatementsList(string name)
+        public static List<int> GetCustomStatementsList(CMSDataContext db, string name)
         {
             if (name == "all")
                 return null;
-            var xd = XDocument.Parse(Util.PickFirst(DbUtil.Db.ContentOfTypeText("CustomStatements"), "<CustomStatement/>"));
+            var xd = XDocument.Parse(Util.PickFirst(db.ContentOfTypeText("CustomStatements"), "<CustomStatement/>"));
 
-            var allfunds = DbUtil.Db.ContributionFunds.Select(cc => cc.FundId).ToList();
-            if (name == "Standard Statements")
+            var standardsetlabel = db.Setting("StandardFundSetName", "Standard Statements");
+
+            var allfunds = db.ContributionFunds.Select(cc => cc.FundId).ToList();
+            if (name == standardsetlabel)
             {
                 var standardFunds = allfunds.Select(vv => vv).ToList();
                 foreach (var ele in xd.Descendants("Statement"))
@@ -362,22 +371,22 @@ namespace CmsData.API
                 }
                 return standardFunds;
             }
-            var funds = xd.XPathSelectElement($"//Statement[@description='{name}']/Funds")?.Value ?? "";
+            var funds = xd.XPathSelectElement($"//Statement[@description=\"{name}\"]/Funds")?.Value ?? "";
             return GetFundSet(funds, allfunds);
         }
-        public static List<int> GetCustomFundSetList(string name)
+        public static List<int> GetCustomFundSetList(CMSDataContext db, string name)
         {
             if (name == "all")
                 return null;
-            var xd = XDocument.Parse(Util.PickFirst(DbUtil.Db.ContentOfTypeText("CustomFundSets"), "<CustomFundSets/>"));
-            var funds = xd.XPathSelectElement($"//FundSet[@description='{name}']/Funds")?.Value ?? "";
+            var xd = XDocument.Parse(Util.PickFirst(db.ContentOfTypeText("CustomFundSets"), "<CustomFundSets/>"));
+            var funds = xd.XPathSelectElement($"//FundSet[@description=\"{name}\"]/Funds")?.Value ?? "";
             if (!funds.HasValue())
-                return GetCustomStatementsList(name);
+                return GetCustomStatementsList(db, name);
 
-            var allfunds = DbUtil.Db.ContributionFunds.Select(cc => cc.FundId).ToList();
+            var allfunds = db.ContributionFunds.Select(cc => cc.FundId).ToList();
             return funds.HasValue()
                 ? GetFundSet(funds, allfunds)
-                : GetCustomStatementsList(name);
+                : GetCustomStatementsList(db, name);
         }
 
 

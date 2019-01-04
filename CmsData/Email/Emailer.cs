@@ -160,7 +160,6 @@ namespace CmsData
         {
             var list = (from p in CMSRoleProvider.provider.GetAdmins()
                         where p.EmailAddress.HasValue()
-                              && !p.EmailAddress.Contains("bvcms.com")
                               && !p.EmailAddress.Contains("touchpointsoftware.com")
                         select p).ToList();
             if (list.Count == 0)
@@ -223,7 +222,7 @@ namespace CmsData
                      where p.PeopleId == a[0]
                      select p.FromEmail;
             if (!q2.Any())
-                return Setting("AdminMail", "info@touchpointsoftware.com");
+                return Setting("AdminMail", ConfigurationManager.AppSettings["supportemail"]);
             return q2.SingleOrDefault();
         }
 
@@ -239,7 +238,7 @@ namespace CmsData
                      where p.PeopleId == a[0]
                      select Util.TryGetMailAddress(p.FromEmail);
             if (!q2.Any())
-                return Util.ToMailAddressList(Setting("AdminMail", "info@touchpointsoftware.com"));
+                return Util.ToMailAddressList(Setting("AdminMail", ConfigurationManager.AppSettings["supportemail"]));
             return q2.ToList();
         }
 
@@ -742,8 +741,8 @@ namespace CmsData
                     if (url.StartsWith("mailto:"))
                         continue;
 
-                    if (EmailReplacements.ImageRe.IsMatch(url))
-                        url = EmailReplacements.ImageReplacement(this, url);
+                    if (EmailReplacements.SettingUrlRe.IsMatch(url))
+                        url = EmailReplacements.SettingUrlReplacement(this, url);
                     var hash = HashMd5Base64(md5Hash, url + DateTime.Now.ToString("o") + linkIndex);
 
                     var emailLink = new EmailLink
@@ -775,11 +774,11 @@ namespace CmsData
         public string CustomSendGridApiKey => Setting("SendGridAPIKey", "");
         public bool UseSendGridApi => Setting("UseSendGridApi");
         public bool UseIpWarmup => Setting("UseIpWarmup");
-        public string CustomFromDomain => Setting("SysFromEmail", "");
+        public string CustomFromDomain => Setting("sysfromemail", ConfigurationManager.AppSettings["sysfromemail"]);
 
         // Configuration for SendGrid
         public string DefaultSendGridApiKey => ConfigurationManager.AppSettings["SendGridAPIKey"];
-        public string DefaultFromDomain => Util.PickFirst(ConfigurationManager.AppSettings["sysfromemail"], "mailer@bvcms.com");
+        public string DefaultFromDomain => ConfigurationManager.AppSettings["sysfromemail"];
 
         public bool CanUseSendGrid => CustomSendGridApiKey.HasValue() && DefaultSendGridApiKey.HasValue();
         public bool UseCustomEmailDomain => CustomSendGridApiKey.HasValue() && CustomFromDomain.HasValue();
@@ -789,6 +788,11 @@ namespace CmsData
         {
             var domain = SendEmail(fromAddress, subject, message, to, eqto.Id, eqto.PeopleId, cc);
             eqto.DomainFrom = domain;
+        }
+
+        public string SendEmail(MailAddress fromAddress, string subject, string message, MailAddress to, int? id = null, int? pid = null, List<MailAddress> cc = null)
+        {
+            return SendEmail(fromAddress, subject, message, new[] { to }.ToList(), id, pid, cc);
         }
 
         public string SendEmail(MailAddress fromAddress, string subject, string message, List<MailAddress> to, int? id = null, int? pid = null, List<MailAddress> cc = null)

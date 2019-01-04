@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Diagnostics;
 using System.Dynamic;
 using System.IO;
@@ -35,7 +36,9 @@ namespace CmsData
         public string CallScript(string scriptname)
         {
             var script = db.ContentOfTypePythonScript(scriptname);
-            return ExecutePython(script, new PythonModel(db.Host, dictionary));
+            var model = new PythonModel(db.Host, dictionary);
+            model.FromMorningBatch = FromMorningBatch;
+            return ExecutePython(script, model);
         }
 
         public string Content(string name)
@@ -71,8 +74,19 @@ namespace CmsData
         {
             return new DynamicData(dict);
         }
+        /// <summary>
+        /// Creates a new DynamicData instance populated with a previous instance
+        /// </summary>
+        public DynamicData DynamicData(DynamicData dd)
+        {
+            return new DynamicData(dd);
+        }
 
         public void DictionaryAdd(string key, string value)
+        {
+            dictionary.Add(key, value);
+        }
+        public void DictionaryAdd(string key, object value)
         {
             dictionary.Add(key, value);
         }
@@ -118,7 +132,7 @@ namespace CmsData
 
         public string Replace(string text, string pattern, string replacement)
         {
-            return Regex.Replace(text, pattern, replacement);
+            return Regex.Replace(text, pattern, replacement, RegexOptions.Singleline);
         }
         public static string Markdown(string text)
         {
@@ -220,6 +234,16 @@ namespace CmsData
         {
             var d = JsonConvert.DeserializeObject(json);
             var s = JsonConvert.SerializeObject(d, Formatting.Indented);
+            return s.Replace("\r\n", "\n");
+        }
+        public string FormatJson(DynamicData data)
+        {
+            var json = data.ToString();
+            return FormatJson(json);
+        }
+        public string FormatJson(Dictionary<string, object> data)
+        {
+            var s = JsonConvert.SerializeObject(data, Formatting.Indented);
             return s.Replace("\r\n", "\n");
         }
 
@@ -350,6 +374,21 @@ DELETE dbo.Tag WHERE TypeId = 101 AND Name LIKE @namelike
             c.Body = sql;
             db.SubmitChanges();
         }
+        public void WriteContentText(string name, string text)
+        {
+            var c = db.Content(name, ContentTypeCode.TypeText);
+            if (c == null)
+            {
+                c = new Content()
+                {
+                    Name = name,
+                    TypeID = ContentTypeCode.TypeText
+                };
+                db.Contents.InsertOnSubmit(c);
+            }
+            c.Body = text;
+            db.SubmitChanges();
+        }
         public int TagLastQuery(string defaultcode)
         {
             Tag tag = null;
@@ -373,6 +412,13 @@ DELETE dbo.Tag WHERE TypeId = 101 AND Name LIKE @namelike
             return csv;
         }
 
+        public CsvHelper.CsvReader CsvReaderNoHeader(string text)
+        {
+            var csv = new CsvHelper.CsvReader(new StringReader(text));
+            csv.Configuration.HasHeaderRecord = false;
+            return csv;
+        }
+
         public string AppendIfBoth(string s1, string join, string s2)
         {
             if (s1.HasValue() && s2.HasValue())
@@ -380,6 +426,30 @@ DELETE dbo.Tag WHERE TypeId = 101 AND Name LIKE @namelike
             if(s1.HasValue())
                 return s1;
             return s2;
+        }
+        [Obsolete]
+        public DynamicData FromJson(string json)
+        {
+            var dd =  JsonConvert.DeserializeObject<Dictionary<string, object>>(json);
+            return new DynamicData(dd);
+        }
+
+        public DynamicData DynamicDataFromJson(string json)
+        {
+            return JsonConvert.DeserializeObject<DynamicData>(json);
+        }
+        /// <summary>
+        /// This returns a csv string of the fundids when a church is using Custom Statements and FundSets for different statements
+        /// The csv string can be used in SQL using dbo.SplitInts in a query to match a set of fundids.
+        /// </summary>
+        public string CustomStatementsFundIdList(string name)
+        {
+            return string.Join(",", APIContributionSearchModel.GetCustomStatementsList(db, name));
+        }
+        
+        public string SpaceCamelCase(string s)
+        {
+            return s.SpaceCamelCase();
         }
     }
 }

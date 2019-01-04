@@ -27,9 +27,9 @@
             }
             pid = personId;
 
-            $('#name').val($("td.name a", tr).text());
-            $('#checkno').val($("td.checkno a", tr).text());
-            $('#notes').val($("td.notes span", tr).text());
+            $('#name').val($("td.name a", tr).text().trim());
+            $('#checkno').val($("td.checkno a", tr).text().trim());
+            $('#notes').val($("td.notes span", tr).text().trim());
             $('#amt').focus();
             $(this).val($.trim(pid));
             return true;
@@ -194,7 +194,7 @@
         }
 
         $('#pid').val(personId);
-        $('#name').val($("td.name a", tr).text());
+        $('#name').val($(".name", tr).text().trim());
         $('#contributiondate').val($(".date", tr).val());
         $('#campusid').val($(".campusid", tr).val());
         $("#gear").show();
@@ -488,7 +488,8 @@
 
 function AddSelected(ret) {
     var tr = $('tr[cid=' + ret.cid + ']');
-    $('a.pid', tr).text(ret.pid);
-    $('td.name a', tr).text(ret.name);
-    $('a.edit', tr).click();
+    $('.pid', tr).text(ret.pid);
+    $('.name', tr).text(ret.name);
+
+    $('.edit', tr).click();
 }

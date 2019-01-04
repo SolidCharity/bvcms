@@ -1171,6 +1171,23 @@ This search uses multiple steps which cannot be duplicated in a single query.
             var result = this.ExecuteMethodCall(this, ((MethodInfo)(MethodInfo.GetCurrentMethod())), oid, mdt);
             return ((int)(result.ReturnValue));
         }
+        [Function(Name = "dbo.CreateZipCodesRange")]
+        public int CreateZipCodesRange(
+            [Parameter(DbType = "Int")] int startwith,
+            [Parameter(DbType = "Int")] int endwith,
+            [Parameter(DbType = "Int")] int marginalcode)
+        {
+            var result = this.ExecuteMethodCall(this, ((MethodInfo)(MethodInfo.GetCurrentMethod())), startwith, endwith, marginalcode);
+            return ((int)(result.ReturnValue));
+        }
+        [Function(Name = "dbo.DeleteZipCodesRange")]
+        public int DeleteZipCodesRange(
+            [Parameter(DbType = "Int")] int startwith,
+            [Parameter(DbType = "Int")] int endwith)
+        {
+            var result = this.ExecuteMethodCall(this, ((MethodInfo)(MethodInfo.GetCurrentMethod())), startwith, endwith);
+            return ((int)(result.ReturnValue));
+        }
         [Function(Name = "dbo.InsertDuplicate")]
         public int InsertDuplicate([Parameter(DbType = "Int")] int i1, [Parameter(DbType = "Int")] int i2)
         {
@@ -1219,6 +1236,12 @@ This search uses multiple steps which cannot be duplicated in a single query.
         public int FastDrop([Parameter(DbType = "Int")] int oid, [Parameter(DbType = "Int")] int pid, [Parameter(DbType = "DateTime")] DateTime dropdate, [Parameter(DbType = "NVARCHAR(150)")] string orgname)
         {
             var result = this.ExecuteMethodCall(this, ((MethodInfo)(MethodInfo.GetCurrentMethod())), oid, pid, dropdate, orgname);
+            return ((int)(result.ReturnValue));
+        }
+        [Function(Name = "dbo.RemoveFromEnrollmentHistory")]
+        public int RemoveFromEnrollmentHistory([Parameter(DbType = "Int")] int organizationid, [Parameter(DbType = "Int")] int peopleid)
+        {
+            var result = this.ExecuteMethodCall(this, ((MethodInfo)(MethodInfo.GetCurrentMethod())), organizationid, peopleid);
             return ((int)(result.ReturnValue));
         }
         [Function(Name = "dbo.DeleteEnrollmentTransaction")]
@@ -1516,6 +1539,7 @@ This search uses multiple steps which cannot be duplicated in a single query.
             }
             return ep;
         }
+
         public ContributionFund FetchOrCreateFund(int FundId, string Description, bool? NonTax = null)
         {
             ContributionFund fund;
@@ -1527,9 +1551,14 @@ This search uses multiple steps which cannot be duplicated in a single query.
             {
                 int nextfundid;
                 if (FundId > 0)
+                { 
                     nextfundid = FundId;
+                }
                 else
-                    nextfundid = ContributionFunds.Max(ff => ff.FundId) + 1;
+                {
+                    int maxFundId = ContributionFunds.OrderByDescending(ff => ff.FundId).FirstOrDefault()?.FundId ?? 0;
+                    nextfundid = maxFundId + 1;
+                }
                 fund = new ContributionFund
                 {
                     FundName = Description,
@@ -1547,6 +1576,7 @@ This search uses multiple steps which cannot be duplicated in a single query.
             }
             return fund;
         }
+
         public int ActiveRecords()
         {
             const string name = "ActiveRecords";
