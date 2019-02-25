@@ -1660,7 +1660,8 @@ This search uses multiple steps which cannot be duplicated in a single query.
 
         public IGateway Gateway(bool testing = false, string usegateway = null)
         {
-            var type = Setting("TransactionGateway", "not specified");
+            var gwProc = Setting("GatewayPerProcess", "not specified");
+            var type = Setting("GatewayPerProcess", "not specified");
             if (usegateway != null)
                 type = usegateway;
 
