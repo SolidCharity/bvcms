@@ -1,10 +1,47 @@
-DROP TABLE IF EXISTS [lookup].[GatewayServiceType]
+IF EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES where 
+	TABLE_NAME = 'GatewaySettings' AND 
+	TABLE_SCHEMA = 'dbo')
+	BEGIN		
+		DROP TABLE [dbo].[GatewaySettings];		
+	END	
+GO
+
+IF EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES where 
+	TABLE_NAME = 'Gateways' AND 
+	TABLE_SCHEMA = 'lookup')
+	BEGIN				
+		DROP TABLE [lookup].[Gateways]		
+	END
+GO
+
+IF EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES where 
+	TABLE_NAME = 'GatewayServiceType' AND 
+	TABLE_SCHEMA = 'lookup')
+	BEGIN		
+		DROP TABLE [lookup].[GatewayServiceType]
+	END
+GO
+
+IF EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES where 
+	TABLE_NAME = 'Process' AND 
+	TABLE_SCHEMA = 'lookup')
+	BEGIN
+		DROP TABLE [lookup].[Process]
+	END
+GO
+
+IF EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES where 
+	TABLE_NAME = 'ProcessType' AND 
+	TABLE_SCHEMA = 'lookup')
+	BEGIN		
+		DROP TABLE [lookup].[ProcessType]
+	END
+GO
 
 CREATE TABLE [lookup].[GatewayServiceType](
 	[GatewayServiceTypeId][int] IDENTITY(1,1) PRIMARY KEY,
 	[GatewayServiceTypeName][nvarchar](25) NOT NULL
 )
-GO
 
 INSERT INTO [lookup].[GatewayServiceType]
 ([GatewayServiceTypeName])
@@ -14,25 +51,21 @@ VALUES
 ('API')
 GO
 
-DROP TABLE IF EXISTS [lookup].[Gateways]
 CREATE TABLE [lookup].[Gateways](
-	[GatewayId][int] IDENTITY(1,1) PRIMARY KEY,
-	[GatewayName][nvarchar](30) NOT NULL,
-	[GatewayServiceTypeId][int] FOREIGN KEY REFERENCES [lookup].[GatewayServiceType]([GatewayServiceTypeId]) NOT NULL
-)
+			[GatewayId][int] IDENTITY(1,1) PRIMARY KEY,
+			[GatewayName][nvarchar](30) NOT NULL,
+			[GatewayServiceTypeId][int] FOREIGN KEY REFERENCES [lookup].[GatewayServiceType]([GatewayServiceTypeId]) NOT NULL
+		)
 
-INSERT INTO [lookup].[Gateways]
-([GatewayName],
-[GatewayServiceTypeId])
-VALUES
-('Pushpay', 1),
-('Sage', 2),
-('Transnational', 2),
-('Acceptival', 3)
-GO
+		INSERT INTO [lookup].[Gateways]
+		([GatewayName],
+		[GatewayServiceTypeId])
+		VALUES
+		('Pushpay', 1),
+		('Sage', 2),
+		('Transnational', 2),
+		('Acceptival', 3)
 
-
-DROP TABLE IF EXISTS [lookup].[ProcessType]
 CREATE TABLE [lookup].[ProcessType](
 	[ProcessTypeId][int] IDENTITY(1,1) PRIMARY KEY,
 	[ProcessTypeName][nvarchar](75) NOT NULL
@@ -45,7 +78,6 @@ VALUES
 ('No Payment Required')
 GO
 
-DROP TABLE IF EXISTS [lookup].[Process]
 CREATE TABLE [lookup].[Process](
 	[ProcessId][int] IDENTITY(1,1) PRIMARY KEY NOT NULL,
 	[ProcessName][nvarchar](30) NOT NULL,
@@ -62,14 +94,14 @@ VALUES
 ('Online Registration', 1)
 GO
 
-DROP TABLE IF EXISTS [lookup].[GatewaySettings]
 CREATE TABLE [dbo].[GatewaySettings](
-	[GatewaySettingId][int] IDENTITY(1,1) PRIMARY KEY,
-	[GatewayId][int] FOREIGN KEY REFERENCES [lookup].[Gateways]([GatewayId]) NOT NULL,
-	[ProcessId][int] UNIQUE FOREIGN KEY REFERENCES [lookup].[Process]([ProcessId]) NOT NULL,
-	[Settings][nvarchar](max) NOT NULL --JSON format setting details per gateway.
-)
+		[GatewaySettingId][int] IDENTITY(1,1) PRIMARY KEY,
+		[GatewayId][int] FOREIGN KEY REFERENCES [lookup].[Gateways]([GatewayId]) NOT NULL,
+		[ProcessId][int] UNIQUE FOREIGN KEY REFERENCES [lookup].[Process]([ProcessId]) NOT NULL,
+		[Settings][nvarchar](max) NOT NULL --JSON format setting details per gateway.
+		)
 GO
+
 
 DROP PROCEDURE IF EXISTS [dbo].[AddGatewaySettings];
 GO
@@ -97,3 +129,4 @@ AS
 	ELSE
 		SELECT CONVERT([nvarchar](8), 'No Payment allowed with this process') AS 'Status'
 GO
+
