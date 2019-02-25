@@ -102,31 +102,77 @@ CREATE TABLE [dbo].[GatewaySettings](
 		)
 GO
 
-
-DROP PROCEDURE IF EXISTS [dbo].[AddGatewaySettings];
+DROP PROCEDURE IF EXISTS [dbo].[EditGatewaySettings];
 GO
 
-CREATE PROCEDURE [dbo].[AddGatewaySettings]
+CREATE PROCEDURE [dbo].[EditGatewaySettings]
 @GatewayId[int],
 @ProcessId[int],
-@Settings[nvarchar](max)
+@Settings[nvarchar](max),
+@Operation[nvarchar](6) --Insert, Delete, Update
 AS
 	IF(SELECT [ProcessTypeId] FROM [lookup].[Process] WHERE [ProcessId] = @ProcessId) = 1
 	BEGIN
-		INSERT INTO [dbo].[GatewaySettings]
-		([GatewayId]
-		,[ProcessId]
-		,[Settings])
-		VALUES
-		(@GatewayId
-		,@ProcessId
-		,@Settings)
-		IF(@@ROWCOUNT) > 0
-			SELECT CONVERT([nvarchar](8), 'Success') AS 'Status'
-		ELSE
-			SELECT CONVERT([nvarchar](8), 'Error inserting data') AS 'Status'
+		IF(@Operation = 'Insert')
+		BEGIN
+			IF(SELECT GatewayId FROM [dbo].[GatewaySettings] WHERE [ProcessId] = @ProcessId AND [GatewayId] = @GatewayId) = 1
+			BEGIN
+				SELECT CONVERT([nvarchar](max), 'Gateway configuration cannot be inserted. There is a configuration already saved in DB for the gateway-process given') AS 'Status'		
+			END
+
+			ELSE 
+			BEGIN 
+				INSERT INTO [dbo].[GatewaySettings]
+				([GatewayId]
+				,[ProcessId]
+				,[Settings])
+				VALUES
+				(@GatewayId
+				,@ProcessId
+				,@Settings)
+
+				IF(@@ROWCOUNT) > 0
+					SELECT CONVERT([nvarchar](8), 'Success') AS 'Status'
+					--,@GatewayId as '@GatewayId'
+					--,@ProcessId as '@ProcessId'
+					--,@Settings as '@Settings'
+				ELSE
+					SELECT CONVERT([nvarchar](max), 'Error inserting data') AS 'Status'		
+			END			
+		END
+		ELSE IF (@Operation = 'Delete')
+		BEGIN
+			IF(SELECT GatewayId FROM [dbo].[GatewaySettings] WHERE [ProcessId] = @ProcessId AND [GatewayId] = @GatewayId) = 1
+			BEGIN
+				DELETE FROM [dbo].[GatewaySettings] WHERE [ProcessId] = @ProcessId AND [GatewayId] = @GatewayId
+				SELECT CONVERT([nvarchar](max), 'Record deleted successfully') AS 'Status'						
+			END
+			ELSE 
+			BEGIN
+				SELECT CONVERT([nvarchar](max), 'No record found to be deleted') AS 'Status'		
+			END
+			
+		END
+		ELSE IF (@Operation = 'Update')
+		BEGIN
+			IF(SELECT GatewayId FROM [dbo].[GatewaySettings] WHERE [ProcessId] = @ProcessId AND [GatewayId] = @GatewayId) = 1
+			BEGIN
+				UPDATE [dbo].[GatewaySettings] SET [ProcessId] = @ProcessId, [GatewayId] = @GatewayId, [Settings] = @Settings
+				SELECT CONVERT([nvarchar](max), 'Record updated successfully') AS 'Status'						
+			END
+			ELSE
+			BEGIN
+				SELECT CONVERT([nvarchar](max), 'No record found to be updated') AS 'Status'
+			END
+		END
+
+		ELSE 
+		BEGIN
+			SELECT CONVERT([nvarchar](max), 'Not a valid operation') AS 'status'
+		END
+
 	END
 	ELSE
-		SELECT CONVERT([nvarchar](8), 'No Payment allowed with this process') AS 'Status'
+		SELECT CONVERT([nvarchar](max), 'No Payment allowed with this process') AS 'Status'
 GO
 
