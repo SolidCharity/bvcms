@@ -14,7 +14,7 @@ namespace CmsWeb.Areas.OnlineReg.Models
             var list = new Dictionary<int, Settings>();
             if (masterorgid.HasValue)
             {
-                foreach (var o in UserSelectedClasses(masterorg))
+                foreach (var o in UserSelectedClasses(masterorg, CurrentDatabase))
                 {
                     list[o.OrganizationId] = CurrentDatabase.CreateRegistrationSettings(o.OrganizationId);
                 }

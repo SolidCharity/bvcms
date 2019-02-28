@@ -51,7 +51,7 @@ namespace CmsWeb.Areas.OnlineReg.Models
 
             if (masterorg != null)
             {
-                if (!UserSelectedClasses(masterorg).Any())
+                if (!UserSelectedClasses(masterorg, CurrentDatabase).Any())
                 {
                     throw new Exception("no classes available on this org");
                 }

@@ -106,7 +106,8 @@ namespace CmsWeb.Areas.OnlineReg.Models
 
         public IEnumerable<OrgSub> FetchSubs()
         {
-            return from o in OnlineRegModel.UserSelectClasses(masterorg)
+            var db = DbUtil.Db;
+            return from o in OnlineRegModel.UserSelectedClasses(masterorg, db)
                    select new OrgSub
                    {
                        OrgId = o.OrganizationId,
@@ -142,7 +143,8 @@ namespace CmsWeb.Areas.OnlineReg.Models
 
         public void UpdateSubscriptions()
         {
-            var q = from o in OnlineRegModel.UserSelectClasses(masterorg)
+            var db = DbUtil.Db;
+            var q = from o in OnlineRegModel.UserSelectedClasses(masterorg, db)
                     let om = o.OrganizationMembers.SingleOrDefault(mm => mm.PeopleId == pid)
                     where om != null
                     select om;
@@ -167,14 +169,13 @@ namespace CmsWeb.Areas.OnlineReg.Models
 
             foreach (var om in drops)
             {
-                om.Drop(DbUtil.Db);
-                DbUtil.Db.SubmitChanges();
+                om.Drop(db);
+                db.SubmitChanges();
             }
             foreach (var id in joins)
             {
-                OrganizationMember.InsertOrgMembers(DbUtil.Db,
-                    id, pid, MemberTypeCode.Member, DateTime.Now, null, false);
-                DbUtil.Db.SubmitChanges();
+                OrganizationMember.InsertOrgMembers(db, id, pid, MemberTypeCode.Member, DateTime.Now, null, false);
+                db.SubmitChanges();
                 //DbUtil.Db.UpdateMainFellowship(id);
             }
         }
