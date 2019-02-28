@@ -14,7 +14,7 @@ namespace CmsWeb.Areas.OnlineReg.Controllers
             OnlineRegModel m = null;
             if (pf.PayBalance == false)
             {
-                m = OnlineRegModel.GetRegistrationFromDatum(pf.DatumId);
+                m = OnlineRegModel.GetRegistrationFromDatum(pf.DatumId, CurrentDatabase);
                 if (m == null)
                 {
                     return Json(new { error = "coupon not find your registration" });
@@ -83,7 +83,7 @@ namespace CmsWeb.Areas.OnlineReg.Controllers
 
             if (!pf.PayBalance)
             {
-                OnlineRegModel.ConfirmDuePaidTransaction(ti, tid, false);
+                OnlineRegModel.ConfirmDuePaidTransaction(ti, tid, false, CurrentDatabase);
             }
 
             var msg = $"<i class='red'>Your coupon for {c.Amount:n2} has been applied, your balance is now {ti.Amtdue:n2}</i>.";
@@ -125,7 +125,7 @@ namespace CmsWeb.Areas.OnlineReg.Controllers
                 return Json(new { error = "empty coupon" });
             }
 
-            var m = OnlineRegModel.GetRegistrationFromDatum(id);
+            var m = OnlineRegModel.GetRegistrationFromDatum(id, CurrentDatabase);
             m.ParseSettings();
             var coupon = Coupon.ToUpper().Replace(" ", "");
             var admincoupon = CurrentDatabase.Setting("AdminCoupon", "ifj4ijweoij").ToUpper().Replace(" ", "");

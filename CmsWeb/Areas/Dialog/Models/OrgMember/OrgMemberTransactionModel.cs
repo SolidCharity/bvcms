@@ -82,6 +82,7 @@ namespace CmsWeb.Areas.Dialog.Models
 
         internal void PostTransaction(ModelStateDictionary modelState)
         {
+            var db = DbUtil.Db;
             if (TransactionSummary != null && (Payment ?? 0) == 0)
             {
                 modelState.AddModelError("Payment", "must have non zero value");
@@ -106,7 +107,7 @@ namespace CmsWeb.Areas.Dialog.Models
             {
                 if (TransactionSummary == null)
                 {
-                    om.AddToGroup(DbUtil.Db, "Goer");
+                    om.AddToGroup(db, "Goer");
                     om.Amount = Amount;
                 }
                 if (AdjustFee == false && (Payment ?? 0) != 0)
@@ -119,18 +120,18 @@ namespace CmsWeb.Areas.Dialog.Models
                         OrgId = om.OrganizationId,
                         Created = DateTime.Now,
                     };
-                    DbUtil.Db.GoerSenderAmounts.InsertOnSubmit(gs);
+                    db.GoerSenderAmounts.InsertOnSubmit(gs);
                 }
             }
-            var descriptionForPayment = OnlineRegModel.GetDescriptionForPayment(OrgId);
-            om.AddTransaction(DbUtil.Db, reason, Payment ?? 0, Description, Amount, AdjustFee, descriptionForPayment);
+            var descriptionForPayment = OnlineRegModel.GetDescriptionForPayment(OrgId, db);
+            om.AddTransaction(db, reason, Payment ?? 0, Description, Amount, AdjustFee, descriptionForPayment);
             var showcount = "";
             if (TransactionSummary != null && TransactionSummary.NumPeople > 1)
             {
                 showcount = $"({TransactionSummary.NumPeople}) ";
             }
 
-            DbUtil.LogActivity($"OrgMem{showcount} {reason}", OrgId, PeopleId);
+            db.LogActivity($"OrgMem{showcount} {reason}", OrgId, PeopleId);
         }
     }
 }

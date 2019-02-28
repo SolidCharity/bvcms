@@ -6,9 +6,15 @@ namespace CmsWeb.Areas.OnlineReg.Models
 {
     public partial class OnlineRegModel
     {
+        [Obsolete("Please use preferred method that accepts a CMSDataContext")]
         public static string GetTransactionGateway()
         {
-            return DbUtil.Db.Setting("TransactionGateway", "notSupported").ToLower();
+            return GetTransactionGateway(DbUtil.Db);
+        }
+
+        public static string GetTransactionGateway(CMSDataContext db)
+        {
+            return db.Setting("TransactionGateway", "notSupported").ToLower();
         }
 
         private decimal? payAmt;

@@ -51,7 +51,7 @@ namespace CmsWeb.Areas.OnlineReg.Models
 
             if (masterorg != null)
             {
-                if (!UserSelectClasses(masterorg).Any())
+                if (!UserSelectedClasses(masterorg).Any())
                 {
                     throw new Exception("no classes available on this org");
                 }
@@ -63,7 +63,7 @@ namespace CmsWeb.Areas.OnlineReg.Models
                     throw new BadRegistrationException("no registration allowed on this org");
                 }
             }
-            this.testing = testing == true || DbUtil.Db.Setting("OnlineRegTesting", Util.IsDebug() ? "true" : "false").ToBool();
+            this.testing = testing == true || db.Setting("OnlineRegTesting", Util.IsDebug() ? "true" : "false").ToBool();
 
             // the email passed in is valid or they did not specify login
             if (AllowAnonymous && (Util.ValidEmail(email) || login != true))
@@ -106,11 +106,16 @@ namespace CmsWeb.Areas.OnlineReg.Models
                         }
                 };
         }
-        public static string GetDescriptionForPayment(int? id)
+        public string GetDescriptionForPayment(int? id)
+        {
+            return GetDescriptionForPayment(id, CurrentDatabase);
+        }
+
+        public static string GetDescriptionForPayment(int? id, CMSDataContext db)
         {
             try
             {
-                var m = new OnlineRegModel(null, DbUtil.Db, id, false, null, null, null);
+                var m = new OnlineRegModel(null, db, id, false, null, null, null);
                 return m.DescriptionForPayment;
             }
             catch (Exception)

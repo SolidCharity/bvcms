@@ -68,7 +68,7 @@ namespace CmsWeb.Areas.Dialog.Controllers
                 return View("AddTransaction", m);
             }
 
-            m.PostTransactions();
+            m.PostTransactions(CurrentDatabase);
             return View("AddTransactionDone", m);
         }
 

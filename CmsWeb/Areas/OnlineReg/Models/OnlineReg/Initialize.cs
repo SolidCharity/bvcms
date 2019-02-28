@@ -1,9 +1,9 @@
 using CmsData;
+using CmsWeb.Models;
 using System;
 using System.Linq;
 using System.Web;
 using UtilityExtensions;
-using CmsWeb.Models;
 
 namespace CmsWeb.Areas.OnlineReg.Models
 {

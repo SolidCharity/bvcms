@@ -183,19 +183,18 @@ AND NOT EXISTS(SELECT NULL FROM dbo.OrgMemMemTags WHERE OrgId = {0} AND MemberTa
         public string CurrentOrgError;
         private Guid queryId;
 
-        internal void PostTransactions()
+        internal void PostTransactions(CMSDataContext db)
         {
             foreach (var pid in Pids)
             {
-                var db = DbUtil.Create(Util.Host);
-                var om = DbUtil.Db.OrganizationMembers.Single(mm => mm.PeopleId == pid && mm.OrganizationId == OrgId);
-                var ts = DbUtil.Db.ViewTransactionSummaries.SingleOrDefault(
+                var om = db.OrganizationMembers.Single(mm => mm.PeopleId == pid && mm.OrganizationId == OrgId);
+                var ts = db.ViewTransactionSummaries.SingleOrDefault(
                         tt => tt.RegId == om.TranId && tt.PeopleId == om.PeopleId);
                 var reason = ts == null ? "Initial Tran" : "Adjustment";
-                var descriptionForPayment = OnlineRegModel.GetDescriptionForPayment(OrgId);
-                om.AddTransaction(DbUtil.Db, reason, Payment ?? 0, Description, Amount, AdjustFee, descriptionForPayment);
-                DbUtil.Db.SubmitChanges();
-                DbUtil.LogActivity("OrgMem " + reason, OrgId, pid);
+                var descriptionForPayment = OnlineRegModel.GetDescriptionForPayment(OrgId, db);
+                om.AddTransaction(db, reason, Payment ?? 0, Description, Amount, AdjustFee, descriptionForPayment);
+                db.SubmitChanges();
+                db.LogActivity("OrgMem " + reason, OrgId, pid);
             }
         }
 

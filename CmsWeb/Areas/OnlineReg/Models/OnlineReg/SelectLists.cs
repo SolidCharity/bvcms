@@ -10,6 +10,24 @@ namespace CmsWeb.Areas.OnlineReg.Models
     {
         public bool UserNeedsSelection;
 
+        public IQueryable<Organization> UserSelectedClasses(Organization masterorg)
+        {
+            if (!masterorg.OrgPickList.HasValue())
+            {
+                return CurrentDatabase.Organizations.Where(oo => false);
+            }
+
+            var cklist = masterorg.OrgPickList.Split(',').Select(oo => oo.ToInt()).ToList();
+
+            var q = from o in CurrentDatabase.Organizations
+                    where cklist.Contains(o.OrganizationId)
+                    select o;
+            return q;
+
+        }
+
+        //todo: this method is referenced from models in views without a currently availably reference to a db context... marking obsolete and moved the other references to a non-static implementation
+        [Obsolete("Use the non static version of this method")]
         public static IQueryable<Organization> UserSelectClasses(Organization masterorg)
         {
             if (!masterorg.OrgPickList.HasValue())
@@ -25,7 +43,7 @@ namespace CmsWeb.Areas.OnlineReg.Models
             return q;
         }
 
-        public static List<Organization> OrderedClasses(Organization masterorg)
+        public List<Organization> OrderedClasses(Organization masterorg)
         {
             if (masterorg == null)
             {
@@ -33,7 +51,7 @@ namespace CmsWeb.Areas.OnlineReg.Models
             }
 
             var cklist = masterorg.OrgPickList.Split(',').Select(oo => oo.ToInt()).ToList();
-            var list = UserSelectClasses(masterorg).ToList();
+            var list = UserSelectedClasses(masterorg).ToList();
             var d = new Dictionary<int, int>();
             var n = 0;
             foreach (var i in cklist)
@@ -51,14 +69,14 @@ namespace CmsWeb.Areas.OnlineReg.Models
 
         public IEnumerable<ClassInfo> Classes(int? cid)
         {
-            return Classes(masterorg, cid ?? 0);
+            return Classes(CurrentDatabase, masterorg, cid ?? 0);
         }
 
-        public static List<ClassInfo> Classes(Organization masterorg, int id)
+        public static List<ClassInfo> Classes(CMSDataContext db, Organization masterorg, int id)
         {
             var q = from o in OrderedClasses(masterorg)
                     let hasroom = (o.ClassFilled ?? false) == false
-                        && ((o.Limit ?? 0) == 0 || o.Limit > o.RegLimitCount(DbUtil.Db))
+                        && ((o.Limit ?? 0) == 0 || o.Limit > o.RegLimitCount(db))
                         && (o.RegistrationClosed ?? false) == false
                         && (o.RegEnd ?? DateTime.MaxValue) > Util.Now
                         && (o.RegStart ?? DateTime.MinValue) <= Util.Now
@@ -74,7 +92,7 @@ namespace CmsWeb.Areas.OnlineReg.Models
             return list;
         }
 
-        private static string ClassName(Organization o)
+        private string ClassName(Organization o)
         {
             var lead = o.LeaderName;
             if (lead.HasValue())

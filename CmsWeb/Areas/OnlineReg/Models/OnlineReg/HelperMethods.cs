@@ -16,21 +16,6 @@ namespace CmsWeb.Areas.OnlineReg.Models
 {
     public partial class OnlineRegModel
     {
-        //        public static Organization CreateAccountOrg()
-        //        {
-        //            var settings = HttpContext.Current.Items["RegSettings"] as Dictionary<int, Settings>;
-        //            if (settings == null)
-        //            {
-        //                settings = new Dictionary<int, Settings>();
-        //                HttpContext.Current.Items.Add("RegSettings", settings);
-        //            }
-        //            var o = new Organization { OrganizationId = Util.CreateAccountCode, OrganizationName = "My Data" };
-        //            o.RegistrationTypeId = RegistrationTypeCode.CreateAccount;
-        //            if (!settings.ContainsKey(Util.CreateAccountCode))
-        //                settings.Add(Util.CreateAccountCode, ParseSetting("AllowOnlyOne: true", Util.CreateAccountCode));
-        //            return o;
-        //        }
-
         private Dictionary<int, Settings> _settings;
 
         public Dictionary<int, Settings> settings
@@ -159,7 +144,7 @@ namespace CmsWeb.Areas.OnlineReg.Models
 
             if (o != null)
             {
-                if ((o.ClassFilled ?? false) || (o.Limit > 0 && o.Limit <= o.RegLimitCount(DbUtil.Db)))
+                if ((o.ClassFilled ?? false) || (o.Limit > 0 && o.Limit <= o.RegLimitCount(CurrentDatabase)))
                 {
                     return true;
                 }
@@ -381,7 +366,7 @@ namespace CmsWeb.Areas.OnlineReg.Models
                 {
                     if (GoerId.HasValue)
                     {
-                        var g = DbUtil.Db.LoadPersonById(GoerId.Value);
+                        var g = CurrentDatabase.LoadPersonById(GoerId.Value);
                         if (g != null)
                         {
                             return $"Support: {org.Title} ({g.Name})";
@@ -547,9 +532,7 @@ namespace CmsWeb.Areas.OnlineReg.Models
             return text;
         }
 
-        public static string YouMustAgreeStatement(int? orgid) => Util.PickFirst(
-            Organization.GetExtra(DbUtil.Db, orgid, "YouMustAgreeStatement"),
-            "<p>You must agree to the terms above for you or your minor child before you can continue with confirmation.</p>");
+        public string YouMustAgreeStatement(int? orgid) => Util.PickFirst(Organization.GetExtra(CurrentDatabase, orgid, "YouMustAgreeStatement"), "<p>You must agree to the terms above for you or your minor child before you can continue with confirmation.</p>");
 
         public string Terms
         {
@@ -579,7 +562,7 @@ namespace CmsWeb.Areas.OnlineReg.Models
         {
             get
             {
-                var trackcode = DbUtil.Db.ContentText("OnlineRegTrackCode", "");
+                var trackcode = CurrentDatabase.ContentText("OnlineRegTrackCode", "");
                 if (masterorgid.HasValue)
                 {
                     if (settings.ContainsKey(masterorgid.Value))
@@ -602,7 +585,7 @@ namespace CmsWeb.Areas.OnlineReg.Models
 
         public OnlineRegPersonModel LoadExistingPerson(int id, int index)
         {
-            var person = DbUtil.Db.LoadPersonById(id);
+            var person = CurrentDatabase.LoadPersonById(id);
             var p = new OnlineRegPersonModel
             {
                 Campus = person.CampusId.GetValueOrDefault().ToString(),
@@ -637,7 +620,7 @@ namespace CmsWeb.Areas.OnlineReg.Models
 
         public string GetThankYouMessage()
         {
-            var def = DbUtil.Db.ContentHtml("OnlineRegThanks", Resource1.OnlineRegModel_ThankYouMessage);
+            var def = CurrentDatabase.ContentHtml("OnlineRegThanks", Resource1.OnlineRegModel_ThankYouMessage);
 
             string msg = null;
             if (masterorg != null)
@@ -675,7 +658,7 @@ namespace CmsWeb.Areas.OnlineReg.Models
 
         public string GetFinishRegistrationButton()
         {
-            string def = DbUtil.Db.Setting("FinishRegBtnText", "Finish Registration");
+            string def = CurrentDatabase.Setting("FinishRegBtnText", "Finish Registration");
 
             string text = null;
             if (masterorg != null)
@@ -717,7 +700,7 @@ namespace CmsWeb.Areas.OnlineReg.Models
                 {
                     timeOut = Util.IsDebug()
                         ? 1600000
-                        : DbUtil.Db.Setting("RegTimeout", "180000").ToInt();
+                        : CurrentDatabase.Setting("RegTimeout", "180000").ToInt();
                     if (masterorgid.HasValue)
                     {
                         if (settings.ContainsKey(masterorgid.Value))
@@ -742,7 +725,7 @@ namespace CmsWeb.Areas.OnlineReg.Models
         {
             if (DatumId.HasValue)
             {
-                Datum = DbUtil.Db.RegistrationDatas.Single(dd => dd.Id == DatumId);
+                Datum = CurrentDatabase.RegistrationDatas.Single(dd => dd.Id == DatumId);
                 Datum.UserPeopleId = UserPeopleId;
             }
             else
@@ -765,8 +748,8 @@ namespace CmsWeb.Areas.OnlineReg.Models
                     UserPeopleId = UserPeopleId,
                     Stamp = Util.Now
                 };
-                DbUtil.Db.RegistrationDatas.InsertOnSubmit(Datum);
-                DbUtil.Db.SubmitChanges();
+                CurrentDatabase.RegistrationDatas.InsertOnSubmit(Datum);
+                CurrentDatabase.SubmitChanges();
                 DatumId = Datum.Id;
             }
             Datum.Data = Util.Serialize<OnlineRegModel>(this);
@@ -779,7 +762,7 @@ namespace CmsWeb.Areas.OnlineReg.Models
             {
                 Datum.Abandoned = true;
             }
-            DbUtil.Db.SubmitChanges();
+            CurrentDatabase.SubmitChanges();
         }
 
         public bool Completed { get; set; }
@@ -788,9 +771,9 @@ namespace CmsWeb.Areas.OnlineReg.Models
         [XmlIgnore]
         public RegistrationDatum Datum { get; set; }
 
-        public static OnlineRegModel GetRegistrationFromDatum(int id)
+        public static OnlineRegModel GetRegistrationFromDatum(int id, CMSDataContext db)
         {
-            var ed = DbUtil.Db.RegistrationDatas.SingleOrDefault(e => e.Id == id);
+            var ed = db.RegistrationDatas.SingleOrDefault(e => e.Id == id);
             if (ed == null)
             {
                 return null;
@@ -807,6 +790,7 @@ namespace CmsWeb.Areas.OnlineReg.Models
                 m.Datum = ed;
                 m.DatumId = id;
                 m.Completed = ed.Completed ?? false;
+                m.CurrentDatabase = db; // setting db here since this is basically another form of a constructor based on current usage
                 return m;
             }
 #pragma warning disable CS0168 // Variable is declared but never used
@@ -825,8 +809,8 @@ namespace CmsWeb.Areas.OnlineReg.Models
             }
 
             var dt30 = DateTime.Now.AddDays(-30);
-            var ed = (from e in DbUtil.Db.RegistrationDatas
-                      let o = DbUtil.Db.Organizations.SingleOrDefault(oo => oo.OrganizationId == (masterorgid ?? _orgid))
+            var ed = (from e in CurrentDatabase.RegistrationDatas
+                      let o = CurrentDatabase.Organizations.SingleOrDefault(oo => oo.OrganizationId == (masterorgid ?? _orgid))
                       where e.Stamp > (o.RegStart ?? dt30)
                       where e.OrganizationId == (masterorgid ?? _orgid)
                       where e.UserPeopleId == pid
@@ -835,51 +819,23 @@ namespace CmsWeb.Areas.OnlineReg.Models
                       orderby e.Stamp descending
                       select e).FirstOrDefault();
             return ed != null
-                ? GetRegistrationFromDatum(ed.Id)
+                ? GetRegistrationFromDatum(ed.Id, CurrentDatabase)
                 : null;
         }
 
 #if DEBUG
         public void DebugCleanUp()
         {
-            var q = from om in DbUtil.Db.OrganizationMembers
-                    where new[] { 828612, Util.UserPeopleId }.Contains(om.PeopleId)
+            var q = from om in CurrentDatabase.OrganizationMembers
+                    where new[] { 828612, Util.UserPeopleId }.Contains(om.PeopleId) //todo: what/who does the 828612 represent?
                     where om.OrganizationId == Orgid
                     select om;
-            //            var q = from om in DbUtil.Db.OrganizationMembers
-            //                    where new[] {2192117,2192118}.Contains(om.OrganizationId)
-            //                    select om;
             foreach (var om in q)
             {
-                om.Drop(DbUtil.Db, DateTime.Now);
-                DbUtil.Db.ExecuteCommand("DELETE dbo.EnrollmentTransaction WHERE PeopleId = {0} AND OrganizationId = {1}", om.PeopleId, om.OrganizationId);
+                om.Drop(CurrentDatabase, DateTime.Now);
+                CurrentDatabase.ExecuteCommand("DELETE dbo.EnrollmentTransaction WHERE PeopleId = {0} AND OrganizationId = {1}", om.PeopleId, om.OrganizationId);
             }
-            DbUtil.Db.SubmitChanges();
-            //                DbUtil.Db.ExecuteCommand(@"
-            //DELETE dbo.EnrollmentTransaction WHERE PeopleId = 58207 AND OrganizationId = 2202
-            //
-            //IF OBJECT_ID('tempDbUtil.Db..#t') IS NOT NULL
-            //   DROP TABLE #t
-            //
-            //SELECT c.ContributionId INTO #t
-            //FROM dbo.Contribution c
-            //JOIN dbo.BundleDetail d ON d.ContributionId = c.ContributionId
-            //JOIN dbo.BundleHeader h ON h.BundleHeaderId = d.BundleHeaderId
-            //WHERE CONVERT(DATE, h.ContributionDate) = CONVERT(DATE, GETDATE())
-            //AND c.PeopleId = 58207
-            //
-            //DELETE dbo.BundleDetail
-            //FROM dbo.BundleDetail d
-            //JOIN #t ON #t.ContributionId = d.ContributionId
-            //
-            //DELETE dbo.Contribution
-            //FROM dbo.Contribution c
-            //JOIN #t ON #t.ContributionId = c.ContributionId
-            //
-            //DELETE dbo.GoerSenderAmounts
-            //WHERE OrgId = 2202
-            //AND SupporterId = 58207
-            //");
+            CurrentDatabase.SubmitChanges();
         }
 #endif
 
@@ -959,7 +915,7 @@ namespace CmsWeb.Areas.OnlineReg.Models
         {
             HistoryAdd("startover");
             UpdateDatum(abandoned: true);
-            DbUtil.Db.ExecuteCommand(@"
+            CurrentDatabase.ExecuteCommand(@"
 UPDATE dbo.RegistrationData
 SET abandoned = 1
 WHERE ISNULL(abandoned, 0) = 0
@@ -969,7 +925,7 @@ AND OrganizationId = {1}", Datum.UserPeopleId, Datum.OrganizationId);
 
         internal string CheckExpiredOrCompleted()
         {
-            var ed = DbUtil.Db.RegistrationDatas.SingleOrDefault(e => e.Id == DatumId);
+            var ed = CurrentDatabase.RegistrationDatas.SingleOrDefault(e => e.Id == DatumId);
             if (ed?.Completed == true && Orgid.HasValue && !settings[Orgid.Value].AllowReRegister)
             {
                 return "Registration Already Completed";

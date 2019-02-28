@@ -1,4 +1,3 @@
-using CmsData;
 using CmsData.Codes;
 using CmsWeb.Areas.OnlineReg.Controllers;
 using System.Linq;
@@ -69,7 +68,7 @@ namespace CmsWeb.Areas.OnlineReg.Models
 
         private RouteModel CheckAlreadyRegistered()
         {
-            var om = DbUtil.Db.OrganizationMembers.SingleOrDefault(
+            var om = CurrentDatabase.OrganizationMembers.SingleOrDefault(
                 mm => mm.OrganizationId == Orgid && mm.PeopleId == List[0].PeopleId);
             ParseSettings();
 

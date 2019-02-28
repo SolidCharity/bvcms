@@ -1,9 +1,8 @@
+using CmsData;
+using CmsWeb.Areas.OnlineReg.Models;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Web.Mvc;
-using CmsData;
-using CmsData.Codes;
-using CmsWeb.Areas.OnlineReg.Models;
 using UtilityExtensions;
 
 namespace CmsWeb.Areas.OnlineReg.Controllers
@@ -13,9 +12,12 @@ namespace CmsWeb.Areas.OnlineReg.Controllers
         [HttpGet]
         public ActionResult Continue(int id)
         {
-            var m = OnlineRegModel.GetRegistrationFromDatum(id);
+            var m = OnlineRegModel.GetRegistrationFromDatum(id, CurrentDatabase);
             if (m == null)
+            {
                 return Message("no Existing registration available");
+            }
+
             var n = m.List.Count - 1;
             m.HistoryAdd("continue");
             m.UpdateDatum();
@@ -28,10 +30,16 @@ namespace CmsWeb.Areas.OnlineReg.Controllers
         {
             var pid = (int?)TempData["PeopleId"];
             if (!pid.HasValue || pid == 0)
+            {
                 return Message("not logged in");
-            var m = OnlineRegModel.GetRegistrationFromDatum(id);
+            }
+
+            var m = OnlineRegModel.GetRegistrationFromDatum(id, CurrentDatabase);
             if (m == null)
+            {
                 return Message("no Existing registration available");
+            }
+
             m.StartOver();
             return Redirect(m.URL);
         }
@@ -50,14 +58,22 @@ namespace CmsWeb.Areas.OnlineReg.Controllers
         {
             m.HistoryAdd("saveprogress");
             if (m.UserPeopleId == null)
+            {
                 m.UserPeopleId = Util.UserPeopleId;
+            }
+
             m.UpdateDatum();
             var p = m.UserPeopleId.HasValue ? CurrentDatabase.LoadPersonById(m.UserPeopleId.Value) : m.List[0].person;
 
             if (p == null)
+            {
                 return Content("We have not found your record yet, cannot save progress, sorry");
+            }
+
             if (m.masterorgid == null && m.Orgid == null)
+            {
                 return Content("Registration is not far enough along to save, sorry.");
+            }
 
             var msg = CurrentDatabase.ContentHtml("ContinueRegistrationLink", @"
 <p>Hi {first},</p>
@@ -83,16 +99,28 @@ We have saved your progress. An email with a link to finish this registration wi
         [HttpGet]
         public ActionResult Existing(int id)
         {
-            if(!TempData.ContainsKey("PeopleId"))
+            if (!TempData.ContainsKey("PeopleId"))
+            {
                 return Message("not logged in");
+            }
+
             var pid = (int?)TempData["PeopleId"];
             if (!pid.HasValue || pid == 0)
+            {
                 return Message("not logged in");
-            var m = OnlineRegModel.GetRegistrationFromDatum(id);
+            }
+
+            var m = OnlineRegModel.GetRegistrationFromDatum(id, CurrentDatabase);
             if (m == null)
+            {
                 return Message("no Existing registration available");
+            }
+
             if (m.UserPeopleId != m.Datum.UserPeopleId)
+            {
                 return Message("incorrect user");
+            }
+
             TempData["PeopleId"] = pid;
             return View("Continue/Existing", m);
         }
@@ -106,7 +134,10 @@ We have saved your progress. An email with a link to finish this registration wi
                 var m = Util.DeSerialize<OnlineRegModel>(ed.Data);
                 m.HistoryAdd("saveprogress");
                 if (m.UserPeopleId == null)
+                {
                     m.UserPeopleId = Util.UserPeopleId;
+                }
+
                 m.UpdateDatum();
                 return Json(new { confirm = "/OnlineReg/FinishLater/" + id });
             }
@@ -118,7 +149,10 @@ We have saved your progress. An email with a link to finish this registration wi
         {
             var ed = CurrentDatabase.RegistrationDatas.SingleOrDefault(e => e.Id == id);
             if (ed == null)
+            {
                 return View("Other/Unknown");
+            }
+
             var m = Util.DeSerialize<OnlineRegModel>(ed.Data);
             m.FinishLaterNotice();
             return View("Continue/FinishLater", m);

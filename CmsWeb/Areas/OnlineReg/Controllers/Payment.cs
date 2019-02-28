@@ -144,7 +144,7 @@ namespace CmsWeb.Areas.OnlineReg.Controllers
                 return View("Other/Unknown");
             }
 
-            var m = OnlineRegModel.GetRegistrationFromDatum(id ?? 0);
+            var m = OnlineRegModel.GetRegistrationFromDatum(id ?? 0, CurrentDatabase);
             if (m == null || m.Completed)
             {
                 if (m == null)
@@ -262,7 +262,7 @@ namespace CmsWeb.Areas.OnlineReg.Controllers
 #if DEBUG
             ti.Testing = true;
 #endif
-            OnlineRegModel.ConfirmDuePaidTransaction(ti, transactionId, sendmail: true);
+            OnlineRegModel.ConfirmDuePaidTransaction(ti, transactionId, true, CurrentDatabase);
             ViewBag.amtdue = PaymentForm.AmountDueTrans(CurrentDatabase, ti).ToString("C");
             SetHeaders(ti.OrgId ?? 0);
             DbUtil.LogActivity("OnlineReg PayDueConfirm", ti.OrgId, ti.LoginPeopleId ?? ti.FirstTransactionPeopleId());

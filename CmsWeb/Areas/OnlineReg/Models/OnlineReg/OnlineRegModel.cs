@@ -1,18 +1,18 @@
 using CmsData;
+using CmsWeb.Models;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Xml.Serialization;
 using UtilityExtensions;
-using CmsWeb.Models;
 
 namespace CmsWeb.Areas.OnlineReg.Models
 {
     [Serializable]
     public partial class OnlineRegModel : IXmlSerializable
     {
-        CMSDataContext CurrentDatabase { get; set; }
+        private CMSDataContext CurrentDatabase { get; set; }
         public bool? testing { get; set; }
         public string FromMobile { get; set; }
         public string URL { get; set; }

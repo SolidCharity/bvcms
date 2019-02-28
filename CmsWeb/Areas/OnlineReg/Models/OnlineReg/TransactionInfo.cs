@@ -1,5 +1,5 @@
-using System.Linq;
 using CmsData;
+using System.Linq;
 using UtilityExtensions;
 
 namespace CmsWeb.Areas.OnlineReg.Models
@@ -29,19 +29,28 @@ namespace CmsWeb.Areas.OnlineReg.Models
         {
             var r = new TransactionInfo();
 
-			if (user != null && FirstPerson != null)
-				r.payinfo = FirstPerson.PaymentInfos.FirstOrDefault();
-			if (r.payinfo == null)
-				r.payinfo = new PaymentInfo { MaskedAccount = "", MaskedCard = "" };
+            if (user != null && FirstPerson != null)
+            {
+                r.payinfo = FirstPerson.PaymentInfos.FirstOrDefault();
+            }
+
+            if (r.payinfo == null)
+            {
+                r.payinfo = new PaymentInfo { MaskedAccount = "", MaskedCard = "" };
+            }
+
             return r;
         }
         public TransactionInfo GetTransactionInfo()
         {
             if (List.Count == 0)
+            {
                 return null;
+            }
+
             var r = InitializeTransactionInfo();
 
-			SetTransactionInfo(r);
+            SetTransactionInfo(r);
             SetTransactionInfoAddress(r);
             SetTransactionInfoForParents(r);
             return r;
@@ -51,8 +60,10 @@ namespace CmsWeb.Areas.OnlineReg.Models
         private void SetTransactionInfoAddress(TransactionInfo r)
         {
 
-            if (!UserPeopleId.HasValue && !FirstRegistrant.IsNew) 
+            if (!UserPeopleId.HasValue && !FirstRegistrant.IsNew)
+            {
                 return;
+            }
 
             if (FirstPerson == null)
             {
@@ -78,8 +89,10 @@ namespace CmsWeb.Areas.OnlineReg.Models
 
         private void SetTransactionInfoForParents(TransactionInfo r)
         {
-            if (FirstRegistrant.org == null || !FirstRegistrant.setting.AskVisible("AskParents")) 
+            if (FirstRegistrant.org == null || !FirstRegistrant.setting.AskVisible("AskParents"))
+            {
                 return;
+            }
 
             var a = (FirstRegistrant.fname ?? FirstRegistrant.mname ?? "").Trim().Split(' ');
             if (a.Length > 1)
@@ -88,27 +101,29 @@ namespace CmsWeb.Areas.OnlineReg.Models
                 r.Last = a[1];
             }
             else
+            {
                 r.Last = a[0];
+            }
         }
 
         private void SetTransactionInfo(TransactionInfo r)
         {
-			if (user != null)
-			{
-			    r.First = user.FirstName;
-			    r.Last = user.LastName;
-			    r.Middle = user.MiddleName.Truncate(1);
-			    r.Email = user.EmailAddress;
-			    r.Suffix = user.SuffixCode;
-			    r.Phone = (user.HomePhone ?? user.CellPhone).FmtFone();
-			}
+            if (user != null)
+            {
+                r.First = user.FirstName;
+                r.Last = user.LastName;
+                r.Middle = user.MiddleName.Truncate(1);
+                r.Email = user.EmailAddress;
+                r.Suffix = user.SuffixCode;
+                r.Phone = (user.HomePhone ?? user.CellPhone).FmtFone();
+            }
             else
             {
-			    r.Email = FirstRegistrant.EmailAddress;
+                r.Email = FirstRegistrant.EmailAddress;
                 r.First = FirstRegistrant.FirstName;
                 r.Last = FirstRegistrant.LastName;
                 r.Phone = FirstRegistrant.Phone;
-            } 
+            }
         }
     }
 }

@@ -166,7 +166,7 @@ namespace CmsWeb.Areas.OnlineReg.Models
                 Description = Description,
                 OrgId = OrgId,
                 Url = URL,
-                TransactionGateway = OnlineRegModel.GetTransactionGateway(),
+                TransactionGateway = OnlineRegModel.GetTransactionGateway(Db),
                 Address = Address.Truncate(50),
                 Address2 = Address2.Truncate(50),
                 City = City,
@@ -183,8 +183,8 @@ namespace CmsWeb.Areas.OnlineReg.Models
                 LastFourACH = Type == PaymentType.Ach ? Account.Last(4) : null
             };
 
-            DbUtil.Db.Transactions.InsertOnSubmit(ti);
-            DbUtil.Db.SubmitChanges();
+            Db.Transactions.InsertOnSubmit(ti);
+            Db.SubmitChanges();
             if (OriginalId == null) // first transaction
             {
                 ti.OriginalId = ti.Id;
@@ -195,8 +195,8 @@ namespace CmsWeb.Areas.OnlineReg.Models
 
         public static decimal AmountDueTrans(CMSDataContext db, Transaction ti)
         {
-            var org = DbUtil.Db.LoadOrganizationById(ti.OrgId);
-            var tt = (from t in DbUtil.Db.ViewTransactionSummaries
+            var org = db.LoadOrganizationById(ti.OrgId);
+            var tt = (from t in db.ViewTransactionSummaries
                       where t.RegId == ti.OriginalId
                       select t).FirstOrDefault();
             if (tt == null)
@@ -206,7 +206,7 @@ namespace CmsWeb.Areas.OnlineReg.Models
 
             if (org.IsMissionTrip ?? false)
             {
-                return (tt.IndAmt ?? 0) - (DbUtil.Db.TotalPaid(tt.OrganizationId, tt.PeopleId) ?? 0);
+                return (tt.IndAmt ?? 0) - (db.TotalPaid(tt.OrganizationId, tt.PeopleId) ?? 0);
             }
 
             return tt.TotDue ?? 0;
@@ -428,7 +428,7 @@ namespace CmsWeb.Areas.OnlineReg.Models
                 OrgId = t.OrgId,
                 Url = t.Url,
                 Address = t.Address,
-                TransactionGateway = OnlineRegModel.GetTransactionGateway(),
+                TransactionGateway = OnlineRegModel.GetTransactionGateway(Db),
                 City = t.City,
                 State = t.State,
                 Zip = t.Zip,
@@ -441,8 +441,8 @@ namespace CmsWeb.Areas.OnlineReg.Models
                 LastFourCC = t.LastFourCC,
                 LastFourACH = t.LastFourACH
             };
-            DbUtil.Db.Transactions.InsertOnSubmit(ti);
-            DbUtil.Db.SubmitChanges();
+            Db.Transactions.InsertOnSubmit(ti);
+            Db.SubmitChanges();
             return ti;
         }
 
@@ -698,17 +698,19 @@ namespace CmsWeb.Areas.OnlineReg.Models
 
         public RouteModel ProcessPayment(ModelStateDictionary modelState, OnlineRegModel m)
         {
+            var db = DbUtil.Db;
             if (m != null && m.email.HasValue() && !Util.ValidEmail(m.email))
             {
                 modelState.AddModelError("form", "Invalid email address");
                 return RouteModel.Invalid("Payment/Process", "Invalid email address");
             }
-            PreventNegatives();
-            PreventZero(modelState);
-            if (!modelState.IsValid)
-            {
-                return RouteModel.ProcessPayment();
-            }
+            //todo: why are we running this twice? is this intentional?
+            //PreventNegatives();
+            //PreventZero(modelState);
+            //if (!modelState.IsValid)
+            //{
+            //    return RouteModel.ProcessPayment();
+            //}
 
             try
             {
@@ -750,9 +752,9 @@ namespace CmsWeb.Areas.OnlineReg.Models
                     return m.FinishRegistration(ti);
                 }
 
-                OnlineRegModel.ConfirmDuePaidTransaction(ti, ti.TransactionId, true);
+                OnlineRegModel.ConfirmDuePaidTransaction(ti, ti.TransactionId, true, db);
 
-                return RouteModel.AmountDue(AmountDueTrans(DbUtil.Db, ti), ti);
+                return RouteModel.AmountDue(AmountDueTrans(db, ti), ti);
             }
             catch (Exception ex)
             {

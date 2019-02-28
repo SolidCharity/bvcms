@@ -14,12 +14,12 @@ namespace CmsWeb.Areas.OnlineReg.Models
             var list = new Dictionary<int, Settings>();
             if (masterorgid.HasValue)
             {
-                foreach (var o in UserSelectClasses(masterorg))
+                foreach (var o in UserSelectedClasses(masterorg))
                 {
-                    list[o.OrganizationId] = DbUtil.Db.CreateRegistrationSettings(o.OrganizationId);
+                    list[o.OrganizationId] = CurrentDatabase.CreateRegistrationSettings(o.OrganizationId);
                 }
 
-                list[masterorg.OrganizationId] = DbUtil.Db.CreateRegistrationSettings(masterorg.OrganizationId);
+                list[masterorg.OrganizationId] = CurrentDatabase.CreateRegistrationSettings(masterorg.OrganizationId);
             }
             else if (_orgid == null)
             {
@@ -27,17 +27,17 @@ namespace CmsWeb.Areas.OnlineReg.Models
             }
             else if (org != null)
             {
-                list[_orgid.Value] = DbUtil.Db.CreateRegistrationSettings(_orgid.Value);
+                list[_orgid.Value] = CurrentDatabase.CreateRegistrationSettings(_orgid.Value);
             }
 
-            HttpContext.Current.Items["RegSettings"] = list;
+            HttpContext.Current.Items["RegSettings"] = list; //todo: Get from <see ref="IRequestManager.CurrentHttpContext">
 
             if (org == null || !org.AddToSmallGroupScript.HasValue())
             {
                 return;
             }
 
-            var script = DbUtil.Db.Content(org.AddToSmallGroupScript);
+            var script = CurrentDatabase.Content(org.AddToSmallGroupScript);
             if (script == null || !script.Body.HasValue())
             {
                 return;

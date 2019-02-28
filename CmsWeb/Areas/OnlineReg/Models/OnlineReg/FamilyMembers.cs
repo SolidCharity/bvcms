@@ -1,5 +1,4 @@
 using System;
-using CmsData;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web.Mvc;
@@ -69,7 +68,7 @@ namespace CmsWeb.Areas.OnlineReg.Models
             {
                 if (!SupportMissionTrip)
                 {
-                    p.IsFilled = p.org.RegLimitCount(DbUtil.Db) >= p.org.Limit;
+                    p.IsFilled = p.org.RegLimitCount(CurrentDatabase) >= p.org.Limit;
                 }
 
                 if (p.IsFilled)
@@ -78,14 +77,14 @@ namespace CmsWeb.Areas.OnlineReg.Models
                         "Sorry, but registration is filled.");
                 }
 
-                if (p.IsCommunityGroup() && DbUtil.Db.Setting("RestrictCGSignupsTo24Hrs"))
+                if (p.IsCommunityGroup() && CurrentDatabase.Setting("RestrictCGSignupsTo24Hrs"))
                 {
                     if (!p.CanRegisterInCommunityGroup(DateTime.Today.AddDays(-1)))
                     {
-                        var message = DbUtil.Db.Setting("RestrictCGSignupsTo24HrsMessage", "Sorry, but you cannot register for multiple community groups on the same day.");
+                        var message = CurrentDatabase.Setting("RestrictCGSignupsTo24HrsMessage", "Sorry, but you cannot register for multiple community groups on the same day.");
                         modelState.AddModelError(this.GetNameFor(mm => mm.List[List.IndexOf(p)].Found), message);
                     }
-                        
+
                 }
 
                 if (p.Found == true)
