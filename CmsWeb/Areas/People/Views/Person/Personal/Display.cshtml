@@ -107,7 +107,14 @@
       Record added @Model.person.CreatedDate.FormatDateTm()
       @if (((User.IsInRole("Edit") || User.IsInRole("Admin"))))
       {
-          @:(<a href="/Person2/User/@Model.person.CreatedBy">@Model.person.CreatedBy</a>)
+          if(Model.person.CreatedBy != 0)
+          {
+              @:(<a href="/Person2/User/@Model.person.CreatedBy">@Model.person.CreatedBy</a>)
+          }
+          else
+          {
+              @:(@Model.person.CreatedBy)
+          }
       }
     </small>
   </p>
