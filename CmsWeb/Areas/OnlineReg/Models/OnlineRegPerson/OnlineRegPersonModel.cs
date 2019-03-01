@@ -1,12 +1,12 @@
+using CmsData.Codes;
+using CmsWeb.Controllers;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Web;
 using System.Xml.Serialization;
-using CmsWeb.Controllers;
 using UtilityExtensions;
-using CmsData.Codes;
 
 namespace CmsWeb.Areas.OnlineReg.Models
 {
@@ -32,8 +32,11 @@ namespace CmsWeb.Areas.OnlineReg.Models
             set { loggedin = value; }
             get
             {
-                if(!loggedin.HasValue)
+                if (!loggedin.HasValue)
+                {
                     loggedin = Parent.UserPeopleId > 0;
+                }
+
                 return loggedin ?? false;
             }
         }
@@ -136,7 +139,7 @@ namespace CmsWeb.Areas.OnlineReg.Models
 
         [DisplayFormat(DataFormatString = "{0:N2}", ApplyFormatInEditMode = true)]
         public decimal? Suggestedfee { get; set; }
-         
+
         public List<FamilyAttendInfo> FamilyAttend { get; set; }
         public Dictionary<int, decimal?> FundItem { get; set; }
         public Dictionary<string, string> SpecialTest { get; set; }
@@ -177,7 +180,10 @@ namespace CmsWeb.Areas.OnlineReg.Models
             get
             {
                 if (!IsNew && !EmailAddress.HasValue())
+                {
                     return $"{FirstName} {LastName} <{person.EmailAddress}>";
+                }
+
                 return $"{FirstName} {LastName} <{EmailAddress}>";
             }
         }
@@ -185,29 +191,44 @@ namespace CmsWeb.Areas.OnlineReg.Models
         public int? MenuItemValue(int i, string s)
         {
             if (s == null)
+            {
                 return null;
+            }
+
             if (MenuItem[i].ContainsKey(s))
+            {
                 return MenuItem[i][s];
+            }
+
             return null;
         }
 
         public decimal? FundItemValue(int n)
         {
             if (FundItem.ContainsKey(n))
+            {
                 return FundItem[n];
+            }
+
             return null;
         }
 
         public string ExtraQuestionAnswer(int id, string question)
         {
-            if(ExtraQuestion[id].ContainsKey(question))
+            if (ExtraQuestion[id].ContainsKey(question))
+            {
                 return ExtraQuestion[id][question];
+            }
+
             return "n/a";
         }
         public string TextAnswer(int id, string question)
         {
-            if(Text[id].ContainsKey(question))
+            if (Text[id].ContainsKey(question))
+            {
                 return Text[id][question];
+            }
+
             return "n/a";
         }
 
@@ -224,9 +245,14 @@ namespace CmsWeb.Areas.OnlineReg.Models
             if (org != null)
             {
                 if (org.RegistrationTypeId == RegistrationTypeCode.CreateAccount)
+                {
                     return true;
+                }
+
                 if ((org.IsMissionTrip ?? false) && !Parent.SupportMissionTrip)
+                {
                     return true;
+                }
             }
             return CreatingAccount;
         }

@@ -1,7 +1,7 @@
-﻿using System.Linq;
+﻿using CmsData.API;
+using System.Linq;
 using System.Reflection;
 using System.Xml;
-using CmsData.API;
 
 namespace CmsWeb.Areas.OnlineReg.Models
 {
@@ -48,27 +48,45 @@ namespace CmsWeb.Areas.OnlineReg.Models
                         break;
                     case "MissionTripGoerId":
                         if (Parent.SupportMissionTrip)
+                        {
                             w.Add(pi.Name, MissionTripGoerId);
+                        }
+
                         break;
                     case "IsFilled":
                         if (IsFilled)
+                        {
                             w.Add(pi.Name, IsFilled);
+                        }
+
                         break;
                     case "CreatingAccount":
                         if (CreatingAccount)
+                        {
                             w.Add(pi.Name, CreatingAccount);
+                        }
+
                         break;
                     case "MissionTripNoNoticeToGoer":
                         if (MissionTripNoNoticeToGoer)
+                        {
                             w.Add(pi.Name, MissionTripNoNoticeToGoer);
+                        }
+
                         break;
                     case "memberus":
                         if (memberus)
+                        {
                             w.Add(pi.Name, memberus);
+                        }
+
                         break;
                     case "otherchurch":
                         if (otherchurch)
+                        {
                             w.Add(pi.Name, otherchurch);
+                        }
+
                         break;
                     default:
                         w.Add(pi.Name, pi.GetValue(this, null));
@@ -80,8 +98,13 @@ namespace CmsWeb.Areas.OnlineReg.Models
         private bool WriteDropdownOptions(bool optionsAdded, APIWriter w)
         {
             if (option != null && option.Count > 0 && !optionsAdded)
+            {
                 foreach (var o in option)
+                {
                     w.Add("option", o);
+                }
+            }
+
             optionsAdded = true;
             return optionsAdded;
         }
@@ -89,8 +112,11 @@ namespace CmsWeb.Areas.OnlineReg.Models
         private void WriteMenuChoices(APIWriter w)
         {
             if (MenuItem != null)
+            {
                 for (var i = 0; i < MenuItem.Count; i++)
+                {
                     if (MenuItem[i] != null && MenuItem[i].Count > 0)
+                    {
                         foreach (var q in MenuItem[i])
                         {
                             w.Start("MenuItem");
@@ -99,13 +125,21 @@ namespace CmsWeb.Areas.OnlineReg.Models
                             w.Attr("number", q.Value);
                             w.End();
                         }
+                    }
+                }
+            }
         }
 
         private bool WriteCheckboxChoices(bool checkoxesAdded, APIWriter w)
         {
             if (Checkbox != null && Checkbox.Count > 0 && !checkoxesAdded)
+            {
                 foreach (var c in Checkbox)
+                {
                     w.Add("Checkbox", c);
+                }
+            }
+
             checkoxesAdded = true;
             return checkoxesAdded;
         }
@@ -113,6 +147,7 @@ namespace CmsWeb.Areas.OnlineReg.Models
         private void WriteYesNoChoices(APIWriter w)
         {
             if (YesNoQuestion != null && YesNoQuestion.Count > 0)
+            {
                 foreach (var q in YesNoQuestion)
                 {
                     w.Start("YesNoQuestion");
@@ -120,13 +155,17 @@ namespace CmsWeb.Areas.OnlineReg.Models
                     w.AddText(q.Value.ToString());
                     w.End();
                 }
+            }
         }
 
         private void WriteText(APIWriter w)
         {
             if (Text != null)
+            {
                 for (var i = 0; i < Text.Count; i++)
+                {
                     if (Text[i] != null && Text[i].Count > 0)
+                    {
                         foreach (var q in Text[i])
                         {
                             w.Start("Text");
@@ -135,13 +174,19 @@ namespace CmsWeb.Areas.OnlineReg.Models
                             w.AddText(q.Value);
                             w.End();
                         }
+                    }
+                }
+            }
         }
 
         private void WriteExtraAnswers(APIWriter w)
         {
             if (ExtraQuestion != null)
+            {
                 for (var i = 0; i < ExtraQuestion.Count; i++)
+                {
                     if (ExtraQuestion[i] != null && ExtraQuestion[i].Count > 0)
+                    {
                         foreach (var q in ExtraQuestion[i])
                         {
                             w.Start("ExtraQuestion");
@@ -150,11 +195,15 @@ namespace CmsWeb.Areas.OnlineReg.Models
                             w.AddText(q.Value);
                             w.End();
                         }
+                    }
+                }
+            }
         }
 
         private void WriteFamilyAttend(APIWriter w)
         {
             if (FamilyAttend != null && FamilyAttend.Count > 0)
+            {
                 foreach (var f in FamilyAttend)
                 {
                     w.Start("FamilyAttend");
@@ -166,11 +215,13 @@ namespace CmsWeb.Areas.OnlineReg.Models
                     w.Attr("MaritalId", f.MaritalId);
                     w.End();
                 }
+            }
         }
 
         private void WriteFundItems(APIWriter w)
         {
             if (FundItem != null && FundItem.Count > 0)
+            {
                 foreach (var f in FundItem.Where(ff => ff.Value > 0))
                 {
                     w.Start("FundItem");
@@ -178,11 +229,13 @@ namespace CmsWeb.Areas.OnlineReg.Models
                     w.AddText(f.Value.Value.ToString());
                     w.End();
                 }
+            }
         }
 
         private void WriteSpecialTest(APIWriter w)
         {
             if (SpecialTest != null)
+            {
                 foreach (var d in SpecialTest)
                 {
                     w.Start("SpecialTest");
@@ -190,6 +243,7 @@ namespace CmsWeb.Areas.OnlineReg.Models
                     w.AddText(d.Value);
                     w.End();
                 }
+            }
         }
     }
 }

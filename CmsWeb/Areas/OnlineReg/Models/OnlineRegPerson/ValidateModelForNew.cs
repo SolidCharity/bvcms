@@ -1,6 +1,6 @@
+using CmsData;
 using System;
 using System.Web.Mvc;
-using CmsData;
 using UtilityExtensions;
 
 namespace CmsWeb.Areas.OnlineReg.Models
@@ -17,7 +17,10 @@ namespace CmsWeb.Areas.OnlineReg.Models
             ValidateBasic();
             ValidateBirthdate();
             if (!IsValidForNew)
+            {
                 return;
+            }
+
             ValidateBirthdayRange(selectFromFamily: false);
             ValidatePhone();
             ValidateEmailForNew();
@@ -36,16 +39,25 @@ namespace CmsWeb.Areas.OnlineReg.Models
         public bool CanProceedWithThisAddress()
         {
             if (!AddressLineOne.HasValue() && RequiredAddr())
+            {
                 modelState.AddModelError(Parent.GetNameFor(mm => mm.List[Index].AddressLineOne), "address required.");
+            }
+
             if (RequiredZip() && !ZipCode.HasValue() && !RequiredAddr())
+            {
                 modelState.AddModelError(Parent.GetNameFor(mm => mm.List[Index].ZipCode), "zip required.");
+            }
 
             if (!RequiredZip() || !AddressLineOne.HasValue())
+            {
                 return true;
+            }
 
             var hasCityStateOrZip = (City.HasValue() && State.HasValue()) || ZipCode.HasValue();
             if (!hasCityStateOrZip)
+            {
                 modelState.AddModelError(Parent.GetNameFor(mm => mm.List[Index].ZipCode), "zip required (or \"na\")");
+            }
 
             if (!modelState.IsValid)
             {
@@ -54,26 +66,46 @@ namespace CmsWeb.Areas.OnlineReg.Models
             }
             var countryIsOK = modelState.IsValid && AddressLineOne.HasValue() && (Country == "United States" || !Country.HasValue());
             if (!countryIsOK)
+            {
                 return true; // not going to validate address
+            }
 
             var r = AddressVerify.LookupAddress(AddressLineOne, AddressLineTwo, City, State, ZipCode);
             if (r.Line1 == "error")
+            {
                 return true; // Address Validator is not available, skip check
+            }
 
             if (r.found == false)
+            {
                 return true; // not going to bother them to ask for better address
+            }
 
             // populate Address corrections
             if (r.Line1 != AddressLineOne)
+            {
                 AddressLineOne = r.Line1;
+            }
+
             if (r.Line2 != (AddressLineTwo ?? ""))
+            {
                 AddressLineTwo = r.Line2;
+            }
+
             if (r.City != (City ?? ""))
+            {
                 City = r.City;
+            }
+
             if (r.State != (State ?? ""))
+            {
                 State = r.State;
+            }
+
             if (r.Zip != (ZipCode ?? ""))
+            {
                 ZipCode = r.Zip;
+            }
 
             return true;
         }
@@ -81,7 +113,10 @@ namespace CmsWeb.Areas.OnlineReg.Models
         private void ValidateMarital()
         {
             if (married.HasValue || !RequiredMarital())
+            {
                 return;
+            }
+
             modelState.AddModelError(Parent.GetNameFor(mm => mm.List[Index].married), "Please specify marital status");
             Log("MaritalRequired");
         }
@@ -89,14 +124,21 @@ namespace CmsWeb.Areas.OnlineReg.Models
         private void ValidateGender()
         {
             if (gender.HasValue || !RequiredGender())
+            {
                 return;
+            }
+
             modelState.AddModelError(Parent.GetNameFor(mm => mm.List[Index].gender), "Please specify gender");
             Log("GenderRequired");
         }
+
         private void ValidateCampus()
         {
             if (!ShowCampusOnRegistration || !RequiredCampus() || Campus.ToInt() > 0)
+            {
                 return;
+            }
+
             modelState.AddModelError(Parent.GetNameFor(mm => mm.List[Index].Campus), $"Please choose {Util2.CampusLabel}.");
             Log("CampusRequired");
         }
@@ -122,9 +164,14 @@ namespace CmsWeb.Areas.OnlineReg.Models
             var dobname = Parent.GetNameFor(mm => mm.List[Index].DateOfBirth);
             DateTime dt;
             if (RequiredDOB() && DateOfBirth.HasValue() && !Util.BirthDateValid(bmon, bday, byear, out dt))
+            {
                 modelState.AddModelError(dobname, "birthday invalid");
+            }
             else if (!BestBirthday.HasValue && RequiredDOB())
+            {
                 modelState.AddModelError(dobname, "birthday required");
+            }
+
             if (BestBirthday.HasValue && BirthYearRequired() && BestBirthday.Value.Year == Util.SignalNoYear)
             {
                 modelState.AddModelError(dobname, "BirthYear is required");
@@ -144,10 +191,14 @@ namespace CmsWeb.Areas.OnlineReg.Models
                 Log("NoAppropriateOrg");
             }
         }
+
         private void ValidatePhone()
         {
             if (PhoneOK)
+            {
                 return;
+            }
+
             modelState.AddModelError(Parent.GetNameFor(mm => mm.List[Index].Phone), "cell or home phone required");
             Log("NeedPhone");
         }
@@ -165,10 +216,14 @@ namespace CmsWeb.Areas.OnlineReg.Models
         private void ValidateEmailForNew()
         {
             if (EmailAddress.HasValue())
+            {
                 EmailAddress = EmailAddress.Trim();
+            }
 
             if (EmailAddress.HasValue() && Util.ValidEmail(EmailAddress))
+            {
                 return;
+            }
 
             modelState.AddModelError(Parent.GetNameFor(mm => mm.List[Index].person.EmailAddress),
                 "Please specify a valid email address.");

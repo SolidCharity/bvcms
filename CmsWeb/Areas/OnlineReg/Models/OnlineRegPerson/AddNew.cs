@@ -1,9 +1,8 @@
-﻿using System;
+﻿using CmsData;
+using CmsData.Codes;
 using System.Data.Linq;
 using System.Linq;
 using System.Web.Mvc;
-using CmsData;
-using CmsData.Codes;
 using UtilityExtensions;
 
 namespace CmsWeb.Areas.OnlineReg.Models
@@ -20,11 +19,20 @@ namespace CmsWeb.Areas.OnlineReg.Models
             if (org != null && Found == true)
             {
                 if (!Parent.SupportMissionTrip)
+                {
                     IsFilled = org.RegLimitCount(DbUtil.Db) >= org.Limit;
+                }
+
                 if (IsFilled)
+                {
                     modelState.AddModelError(Parent.GetNameFor(mm => mm.List[id].DateOfBirth), "Sorry, but registration is closed.");
+                }
+
                 if (Found == true)
+                {
                     FillPriorInfo();
+                }
+
                 return true;
             }
             if (id > 0)
@@ -40,7 +48,10 @@ namespace CmsWeb.Areas.OnlineReg.Models
                 Log("WillAddToSameFamily");
             }
             else
+            {
                 Log("WillAddToNewFamily");
+            }
+
             ShowAddress = true;
             return false;
         }
@@ -97,7 +108,10 @@ namespace CmsWeb.Areas.OnlineReg.Models
                 else if (!ManageSubscriptions())
                 {
                     if (!Parent.SupportMissionTrip)
+                    {
                         IsFilled = org.RegLimitCount(DbUtil.Db) >= org.Limit;
+                    }
+
                     if (IsFilled)
                     {
                         Log("Filled");
@@ -108,18 +122,29 @@ namespace CmsWeb.Areas.OnlineReg.Models
             }
             IsValidForExisting = modelState.IsValid == false;
             if (IsNew)
+            {
                 FillPriorInfo();
+            }
+
             return null;
         }
         internal bool AnonymousReRegistrant()
         {
-            if (Found != true || Parent.Orgid == null) 
+            if (Found != true || Parent.Orgid == null)
+            {
                 return false;
-            if (!setting.AllowReRegister) 
+            }
+
+            if (!setting.AllowReRegister)
+            {
                 return false;
+            }
+
             var om = Parent.org.OrganizationMembers.SingleOrDefault(mm => mm.PeopleId == PeopleId);
-            if (om == null) 
+            if (om == null)
+            {
                 return false;
+            }
 
             Parent.ConfirmReregister();
             DbUtil.Db.SubmitChanges();
@@ -129,6 +154,7 @@ namespace CmsWeb.Areas.OnlineReg.Models
         {
             Family f;
             if (p == null)
+            {
                 f = new Family
                 {
                     AddressLineOne = AddressLineOne,
@@ -139,11 +165,15 @@ namespace CmsWeb.Areas.OnlineReg.Models
                     CountryName = Country,
                     HomePhone = Phone.GetDigits().Truncate(20),
                 };
+            }
             else
+            {
                 f = p.Family;
+            }
+
             DbUtil.Db.SubmitChanges();
 
-            var position = DbUtil.Db.ComputePositionInFamily(age, married == 20 , f.FamilyId) ?? 10;
+            var position = DbUtil.Db.ComputePositionInFamily(age, married == 20, f.FamilyId) ?? 10;
             _person = Person.Add(f, position,
                 null, FirstName.Trim(), null, LastName.Trim(), DateOfBirth, married == 20, gender ?? 0,
                     OriginCode.Enrollment, entrypoint);
@@ -151,15 +181,24 @@ namespace CmsWeb.Areas.OnlineReg.Models
             person.SendEmailAddress1 = true;
             person.CampusId = DbUtil.Db.Setting("DefaultCampusId", "").ToInt2();
             if (Campus.ToInt() > 0)
+            {
                 person.CampusId = Campus.ToInt();
+            }
             else if (org.CampusId > 0)
+            {
                 person.CampusId = org.CampusId;
+            }
+
             person.CellPhone = Phone.GetDigits().Truncate(20);
 
             if (count == 0)
+            {
                 person.Comments = "Added during online registration because record was not found";
-            else if(count > 1)
+            }
+            else if (count > 1)
+            {
                 person.Comments = "Added during online registration because there was more than 1 match";
+            }
 
             DbUtil.Db.SubmitChanges();
             DbUtil.Db.Refresh(RefreshMode.OverwriteCurrentValues, person);

@@ -104,8 +104,8 @@
   @FormAction()
   <p class="record_added muted">
     <small>
-      Record added @Model.CreatedDate.FormatDateTm()
-      @if (Model.person.CreatedBy != 0 && ((User.IsInRole("Edit") || User.IsInRole("Admin"))))
+      Record added @Model.person.CreatedDate.FormatDateTm()
+      @if (((User.IsInRole("Edit") || User.IsInRole("Admin"))))
       {
           @:(<a href="/Person2/User/@Model.person.CreatedBy">@Model.person.CreatedBy</a>)
       }
@@ -114,6 +114,7 @@
   @FormAction(true)
   <br />
 </form>
+
 @helper FormAction(bool xs = false)
 {
 if (!Model.person.CanUserEditBasic) { return; }
