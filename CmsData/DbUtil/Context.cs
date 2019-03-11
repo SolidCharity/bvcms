@@ -1862,6 +1862,7 @@ This search uses multiple steps which cannot be duplicated in a single query.
                 case "transnational":
                     return new TransNationalGateway(this, testing);
                 //IS THIS the only place that the new paymentGateway needs to be hooked up?
+                /* update: 03/11/19, Jose Armando. Method ClearMaskedNumbers(PaymentInfo pi) in ManageGivingModel class also sets functionality for Gateway */
                 case "bluepay":
                     return new BluePayGateway(this, testing);
             }

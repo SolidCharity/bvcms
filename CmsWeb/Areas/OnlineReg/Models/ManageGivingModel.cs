@@ -248,6 +248,7 @@ namespace CmsWeb.Areas.OnlineReg.Models
 
             switch (gateway.ToLower())
             {
+                /* 03/11/19, Jose Armando. new paymentGateway needs to be hooked up? */
                 case "sage":
                     clearBankDetails = !pi.SageBankGuid.HasValue;
                     clearCreditCardDetails = !pi.SageCardGuid.HasValue;
