@@ -1,0 +1,51 @@
+﻿.pb2 {
+    padding-bottom: 2em;
+}
+
+.pt2 {
+    padding-top: 2em;
+}
+
+.fa-frown-o {
+    font-weight: 300;
+    font-size: 100px;
+}
+
+.removefiguration, .deletefiguration {
+    border: none;
+    background: none;
+    background-color: transparent;
+}
+
+.removefiguration i, .deletefiguration i {
+    color: #ff2800;
+    font-size: 15px;
+}
+
+#gatewayValues {
+    overflow-y: auto;
+    max-height: 340px;
+}
+
+.divkeyvalue:not(:first-child) {
+    margin-top: 15px;
+}
+
+.w100 {
+    width: 100%;
+}
+
+.checkbox-gateway {
+    display: block;
+    text-align: center;
+}
+
+.checkbox-gateway input {
+	text-align:center;
+}
+
+@media (min-width: 768px) {
+    .modal-dialog-custom {
+        width: 650px !important;
+    }
+}
