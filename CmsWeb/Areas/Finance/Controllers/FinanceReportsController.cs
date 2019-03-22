@@ -6,6 +6,7 @@ using CmsWeb.Areas.OnlineReg.Models;
 using CmsWeb.Code;
 using CmsWeb.Lifecycle;
 using CmsWeb.Models;
+using CmsWeb.Services.RogueIpService;
 using Dapper;
 using OfficeOpenXml;
 using OfficeOpenXml.Style;
@@ -23,8 +24,11 @@ namespace CmsWeb.Areas.Finance.Controllers
     [RouteArea("Finance", AreaPrefix = "FinanceReports"), Route("{action}/{id?}")]
     public class FinanceReportsController : CmsStaffController
     {
-        public FinanceReportsController(IRequestManager requestManager) : base(requestManager)
+        private readonly IRogueIpService _rogueIpService;
+
+        public FinanceReportsController(IRequestManager requestManager, IRogueIpService rogueIpService) : base(requestManager)
         {
+            _rogueIpService = rogueIpService;
         }
 
         public ActionResult ContributionStatement(int id, DateTime fromDate, DateTime toDate, int typ)
@@ -356,7 +360,7 @@ namespace CmsWeb.Areas.Finance.Controllers
         [HttpGet]
         public ActionResult ManageGiving2(int id)
         {
-            var model = new ManageGivingModel(id);
+            var model = new ManageGivingModel(CurrentDatabase, _rogueIpService, id);
             model.testing = true;
             var body = ViewExtensions2.RenderPartialViewToString(this, "ManageGiving2", model);
             return SimpleContent(body);

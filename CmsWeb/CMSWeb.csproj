@@ -569,9 +569,6 @@
     <Compile Include="Areas\Manage\Models\UserValidationResult.cs" />
     <Compile Include="Areas\Manage\Models\UserValidationStatus.cs" />
     <Compile Include="Areas\MeetingCategory\Controllers\MeetingCategoryController.cs" />
-    <Compile Include="Areas\OnlineReg\Controllers\OnePageGiving.cs" />
-    <Compile Include="Areas\OnlineReg\Controllers\SaveAndContinue.cs" />
-    <Compile Include="Areas\OnlineReg\Controllers\Routing.cs" />
     <Compile Include="Areas\OnlineReg\Models\OnlineRegPerson\Birthday.cs" />
     <Compile Include="Areas\OnlineReg\Models\OnlineRegPerson\DynamicData.cs" />
     <Compile Include="Areas\OnlineReg\Models\OnlineRegPerson\FindPerson.cs" />
@@ -792,9 +789,6 @@
     <Compile Include="Areas\Reports\Models\Other\WeeklyDecisionsModel.cs" />
     <Compile Include="Areas\Reports\Models\Enrollment\EnrollmentControlModel.cs" />
     <Compile Include="Areas\Manage\Controllers\CheckinLabelsController.cs" />
-    <Compile Include="Areas\OnlineReg\Controllers\OtherRegistrations.cs" />
-    <Compile Include="Areas\OnlineReg\Controllers\ManageGiving.cs" />
-    <Compile Include="Areas\OnlineReg\Controllers\ManageSubscriptions.cs" />
     <Compile Include="Areas\OnlineReg\Models\OnlineReg\SpecialRegModel.cs" />
     <Compile Include="Areas\Finance\Controllers\BundlesController.cs" />
     <Compile Include="Areas\Finance\Controllers\BundleController.cs" />
@@ -1101,6 +1095,7 @@
     <Compile Include="Services\ILoggingService.cs" />
     <Compile Include="Services\ITokenizationService.cs" />
     <Compile Include="Services\LoggingService.cs" />
+    <Compile Include="Services\RogueIpService\RogueIpService.cs" />
     <Compile Include="Services\TokenizationService.cs" />
     <Content Include="Areas\Dialog\Views\AddToOrgFromTag\Index.cshtml" />
     <Content Include="Areas\Figures\Views\Figures\AttendanceChartDisplayView.cshtml" />
@@ -2475,13 +2470,8 @@
     <Compile Include="Areas\Manage\Models\EmailModel.cs" />
     <Compile Include="Areas\Manage\Models\EmailsModel.cs" />
     <Compile Include="Areas\Manage\Models\TransactionsModel.cs" />
-    <Compile Include="Areas\OnlineReg\Controllers\ConfirmTest.cs" />
-    <Compile Include="Areas\OnlineReg\Controllers\ManageVolunteers.cs" />
-    <Compile Include="Areas\OnlineReg\Controllers\Coupon.cs" />
     <Compile Include="Areas\OnlineReg\Models\OnlineReg\TransactionInfoOld.cs" />
     <Compile Include="Areas\OnlineReg\Models\OnlineReg\PaymentForm.cs" />
-    <Compile Include="Areas\OnlineReg\Controllers\SetHeaders.cs" />
-    <Compile Include="Areas\OnlineReg\Controllers\Payment.cs" />
     <Compile Include="Areas\OnlineReg\Controllers\OnlineRegController.cs" />
     <Compile Include="Areas\OnlineReg\Models\ManageSubsModel.cs" />
     <Compile Include="Areas\OnlineReg\Models\OnlineRegPerson\Helper.cs" />
