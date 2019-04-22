@@ -184,7 +184,8 @@ IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES where
 		(3, 'GatewayTesting', 'true', 1),
 		(4, 'AcceptivaApiKey', '', 0),
 		(4, 'AcceptivaAchId', '', 0),
-		(4, 'AcceptivaCCId', '', 0);
+		(4, 'AcceptivaCCId', '', 0),
+		(4, 'UseSavingAccounts', 'true', 1);
 	END
 GO
 
