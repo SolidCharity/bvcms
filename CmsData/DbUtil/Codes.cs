@@ -40,6 +40,11 @@ namespace CmsData.Codes
         public const int TypePythonScript = 5;
         public const int TypeUnlayerSavedDraft = 6;
     }
+    public static class OrganizationStatusCode
+    {
+        public const int Active = 30;
+        public const int Inactive = 40;
+    }
     public static class MemberStatusCode
     {
         public const int Member = 10;
