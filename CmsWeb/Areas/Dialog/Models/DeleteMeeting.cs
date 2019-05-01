@@ -16,12 +16,11 @@ namespace CmsWeb.Areas.Dialog.Models
         public int MeetingId { get; set; }
         public int OrgId { get; set; }
         public DeleteMeeting() { }
-        public DeleteMeeting(int id, CMSDataContext db)
+        public DeleteMeeting(int id)
         {
-            Host = db.Host;
             QueryId = Guid.NewGuid();
             MeetingId = id;
-            var mm = db.Meetings.Single(m => m.MeetingId == id);
+            var mm = DbUtil.Db.Meetings.Single(m => m.MeetingId == id);
             OrgId = mm.OrganizationId;
             Count = mm.Attends.Count(a => a.AttendanceFlag || a.EffAttendFlag == true);
         }
@@ -58,6 +57,8 @@ namespace CmsWeb.Areas.Dialog.Models
             LongRunningOperation lop = null;
             foreach (var pid in model.pids)
             {
+                //db.Dispose();
+                //db = CMSDataContext.Create(model.Host);
                 Attend.RecordAttendance(db, pid, model.MeetingId, false);
                 lop = FetchLongRunningOperation(db, Op, model.QueryId);
                 Debug.Assert(lop != null, "r != null");

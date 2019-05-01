@@ -32,7 +32,6 @@ namespace CmsWeb.Areas.Dialog.Models
 
             var lop = new LongRunningOperation
             {
-                Host = db.Host,
                 Started = DateTime.Now,
                 Count = pids.Count,
                 Processed = 0,
@@ -62,7 +61,9 @@ namespace CmsWeb.Areas.Dialog.Models
             LongRunningOperation lop = null;
             foreach (var pid in model.pids)
             {
+                //DbUtil.Db.Dispose();
                 var fsb = new List<ChangeDetail>();
+                //db = CMSDataContext.Create(model.Host);
                 var f = db.LoadFamilyByPersonId(pid);
                 var ret = AddressVerify.LookupAddress(f.AddressLineOne, f.AddressLineTwo, f.CityName, f.StateCode, f.ZipCode);
                 if (ret.found != false && !ret.error.HasValue() && ret.Line1 != "error")

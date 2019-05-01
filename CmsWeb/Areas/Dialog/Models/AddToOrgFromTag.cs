@@ -20,21 +20,18 @@ namespace CmsWeb.Areas.Dialog.Models
 
         public int UserId { get; set; }
         public string OrgName { get; set; }
-        public CMSDataContext CurrentDatabase { get; set; }
         public AddToOrgFromTag() { }
 
         private OrgFilter filter;
-        public OrgFilter Filter => filter ?? (filter = CurrentDatabase.OrgFilter(QueryId));
+        public OrgFilter Filter => filter ?? (filter = DbUtil.Db.OrgFilter(QueryId));
         public int OrgId => Filter.Id;
-        public AddToOrgFromTag(Guid id, CMSDataContext db)
+        public AddToOrgFromTag(Guid id)
         {
-            Host = db.Host;
-            CurrentDatabase = db;
             QueryId = id;
             UserId = Util.UserId;
             if (Filter.GroupSelect == GroupSelectCode.Previous)
             {
-                var org = db.LoadOrganizationById(OrgId);
+                var org = DbUtil.Db.LoadOrganizationById(OrgId);
                 OrgName = org.OrganizationName;
             }
             Tag = new CodeInfo("0", "Tag");
@@ -79,7 +76,6 @@ namespace CmsWeb.Areas.Dialog.Models
             };
             db.LongRunningOperations.InsertOnSubmit(lop);
             db.SubmitChanges();
-            this.Host = db.Host;
             HostingEnvironment.QueueBackgroundWorkItem(ct => DoWork(this));
         }
 
@@ -93,6 +89,8 @@ namespace CmsWeb.Areas.Dialog.Models
             LongRunningOperation lop = null;
             foreach (var pid in model.pids)
             {
+                //DbUtil.Db.Dispose();
+                //db = CMSDataContext.Create(model.Host);
                 switch (model.filter.GroupSelect)
                 {
                     case GroupSelectCode.Member:

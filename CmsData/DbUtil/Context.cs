@@ -145,17 +145,12 @@ namespace CmsData
 
         public static string GetHost(HttpContextBase httpContext)
         {
-            var host = httpContext.Request.Url.Authority.Split('.', ':')[0];
+            var host = (httpContext.Request.Headers["host"] ?? httpContext.Request.Url.Authority).Split('.', ':').First();
             return Util.PickFirst(ConfigurationManager.AppSettings["host"], host);
         }
 
         private static string CreateConnectionString(string host)
         {
-            var hostOverride = ConfigurationManager.AppSettings["host"];
-            if (!string.IsNullOrEmpty(hostOverride)) // default to the host from url, however, override it via web.config for debugging against live data
-            {
-                host = hostOverride;
-            }
             var cs = ConfigurationManager.ConnectionStrings["CMS"];
             var cb = new SqlConnectionStringBuilder(cs.ConnectionString);
             cb.InitialCatalog = $"CMS_{host}";

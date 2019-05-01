@@ -1,6 +1,10 @@
-﻿using CmsData;
-using CmsData.API;
-using CmsWeb.Lifecycle;
+﻿/* Author: David Carroll
+ * Copyright (c) 2008, 2009 Bellevue Baptist Church
+ * Licensed under the GNU General Public License (GPL v2)
+ * you may not use this code except in compliance with the License.
+ * You may obtain a copy of the License at http://bvcms.codeplex.com/license
+ */
+
 using System;
 using System.Collections.Specialized;
 using System.Configuration;
@@ -8,58 +12,35 @@ using System.Configuration.Provider;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using System.Web;
 using System.Web.Configuration;
 using System.Web.Hosting;
 using System.Web.Security;
+using CmsData.API;
 using UtilityExtensions;
-using WebMembership = System.Web.Security.Membership;
 
-namespace CmsWeb.Membership
+namespace CmsData
 {
 
     public sealed class CMSMembershipProvider : MembershipProvider
     {
-        public static CMSMembershipProvider provider => WebMembership.Provider as CMSMembershipProvider;
-
-        private IRequestManager _requestManager;
-        public IRequestManager RequestManager
-        {
-            get => _requestManager;
-            set
-            {
-                if (_requestManager == null && value != null)
-                {
-                    _requestManager = value;
-                    pMinRequiredPasswordLength = CurrentDatabase.Setting("PasswordMinLength", "7").ToInt();
-                    pMinRequiredNonAlphanumericCharacters = CurrentDatabase.Setting("PasswordRequireSpecialCharacter", "true").ToBool() ? 1 : 0;
-                }
-            }
-        }
-
-        public CMSMembershipProvider() { }
-
-        public CMSMembershipProvider(IRequestManager requestManager)
-        {
-            RequestManager = requestManager;
-        }
+        public static CMSMembershipProvider provider => Membership.Provider as CMSMembershipProvider;
 
         private int newPasswordLength = 8;
 
         private MachineKeySection machineKey;
 
-        CMSDataContext CurrentDatabase = CMSDataContext.Create(HttpContextFactory.Current);
-
+        CMSDataContext GetDb()
+        {
+            return CMSDataContext.Create(Util.Host);
+        }
         public override void Initialize(string name, NameValueCollection config)
         {
             if (config == null)
-            {
                 throw new ArgumentNullException("config");
-            }
 
             if (string.IsNullOrEmpty(name))
-            {
                 name = "CMSMembershipProvider";
-            }
 
             if (string.IsNullOrEmpty(config["description"]))
             {
@@ -70,6 +51,11 @@ namespace CmsWeb.Membership
 
             pMaxInvalidPasswordAttempts = Convert.ToInt32(GetConfigValue(config["maxInvalidPasswordAttempts"], "5"));
             pPasswordAttemptWindow = Convert.ToInt32(GetConfigValue(config["passwordAttemptWindow"], "10"));
+
+            var Db = GetDb();
+            pMinRequiredPasswordLength = Db.Setting("PasswordMinLength", "7").ToInt();
+
+            pMinRequiredNonAlphanumericCharacters = DbUtil.Db.Setting("PasswordRequireSpecialCharacter", "true").ToBool() ? 1 : 0;
             pPasswordStrengthRegularExpression = Convert.ToString(GetConfigValue(config["passwordStrengthRegularExpression"], ""));
             pEnablePasswordReset = Convert.ToBoolean(GetConfigValue(config["enablePasswordReset"], "true"));
             pEnablePasswordRetrieval = Convert.ToBoolean(GetConfigValue(config["enablePasswordRetrieval"], "true"));
@@ -78,9 +64,7 @@ namespace CmsWeb.Membership
 
             string temp_format = config["passwordFormat"];
             if (temp_format == null)
-            {
                 temp_format = "Hashed";
-            }
 
             switch (temp_format)
             {
@@ -103,26 +87,23 @@ namespace CmsWeb.Membership
             machineKey = (MachineKeySection)cfg.GetSection("system.web/machineKey");
 
             if (machineKey.ValidationKey.Contains("AutoGenerate"))
-            {
                 if (PasswordFormat != MembershipPasswordFormat.Clear)
-                {
                     throw new ProviderException("Hashed or Encrypted passwords " +
                                                 "are not supported with auto-generated keys.");
-                }
-            }
         }
+
+//		public bool pRequireOneNonAlphaNum { get; set; }
+//		public bool pRequireOneNumber { get; set; }
+//		public bool pRequireOneUpper { get; set; }
 
         private string GetConfigValue(string configValue, string defaultValue)
         {
             if (string.IsNullOrEmpty(configValue))
-            {
                 return defaultValue;
-            }
-
             return configValue;
         }
 
-        public override string ApplicationName { get => "cms"; set { } }
+        public override string ApplicationName { get { return "cms"; } set { } }
 
         private bool pEnablePasswordReset;
         public override bool EnablePasswordReset => pEnablePasswordReset;
@@ -138,74 +119,49 @@ namespace CmsWeb.Membership
         public override int PasswordAttemptWindow => pPasswordAttemptWindow;
         private MembershipPasswordFormat pPasswordFormat;
         public override MembershipPasswordFormat PasswordFormat => pPasswordFormat;
-        private int pMinRequiredNonAlphanumericCharacters = 1;
+        private int pMinRequiredNonAlphanumericCharacters;
         public override int MinRequiredNonAlphanumericCharacters => pMinRequiredNonAlphanumericCharacters;
-        private int pMinRequiredPasswordLength = 7;
+        private int pMinRequiredPasswordLength;
         public override int MinRequiredPasswordLength => pMinRequiredPasswordLength;
         private string pPasswordStrengthRegularExpression;
         public override string PasswordStrengthRegularExpression => pPasswordStrengthRegularExpression;
         public bool AdminOverride = false;
         public override bool ChangePassword(string username, string oldPwd, string newPwd)
         {
-            username = username?.Split('\\').LastOrDefault();
+            username = Util.GetUserName(username);
             if (!ValidateUser(username, oldPwd))
-            {
                 return false;
-            }
-
             var args = new ValidatePasswordEventArgs(username, newPwd, true);
 
             OnValidatingPassword(args);
             if (args.Cancel)
-            {
                 if (args.FailureInformation != null)
-                {
                     throw args.FailureInformation;
-                }
                 else
-                {
                     throw new MembershipPasswordException("Change password canceled due to new password validation failure.");
-                }
-            }
 
             if (!AdminOverride)
             {
                 if (newPwd.Length < MinRequiredPasswordLength)
-                {
                     throw new ArgumentException($"Password must contain at least {MinRequiredPasswordLength} chars");
-                }
-
-                if (MembershipService.RequireSpecialCharacter(CurrentDatabase))
-                {
+                if (MembershipService.RequireSpecialCharacter)
                     if (newPwd.All(char.IsLetterOrDigit))
-                    {
                         throw new ArgumentException("Password needs at least 1 non-alphanumeric character");
-                    }
-                }
-
-                if (MembershipService.RequireOneNumber(CurrentDatabase))
-                {
+                if (MembershipService.RequireOneNumber)
                     if (!newPwd.Any(char.IsDigit))
-                    {
                         throw new ArgumentException("Password needs at least 1 number");
-                    }
-                }
-
-                if (MembershipService.RequireOneUpper(CurrentDatabase))
-                {
+                if (MembershipService.RequireOneUpper)
                     if (!newPwd.Any(char.IsUpper))
-                    {
                         throw new ArgumentException("Password needs at least 1 uppercase letter");
-                    }
-                }
             }
 
-            var user = CurrentDatabase.Users.Single(u => u.Username == username);
+            var db = GetDb();
+            var user = db.Users.Single(u => u.Username == username);
             user.Password = EncodePassword(newPwd);
             user.MustChangePassword = false;
             user.LastPasswordChangedDate = Util.Now;
-            ApiSessionModel.DeleteSession(CurrentDatabase, user);
-            CurrentDatabase.SubmitChanges();
+            ApiSessionModel.DeleteSession(db, user);
+            db.SubmitChanges();
             return true;
         }
 
@@ -214,16 +170,14 @@ namespace CmsWeb.Membership
                       string newPwdQuestion,
                       string newPwdAnswer)
         {
-            username = username?.Split('\\').LastOrDefault();
+            username = Util.GetUserName(username);
             if (!ValidateUser(username, password))
-            {
                 return false;
-            }
-
-            var user = CurrentDatabase.Users.Single(u => u.Username == username);
+            var Db = GetDb();
+            var user = Db.Users.Single(u => u.Username == username);
             user.PasswordQuestion = newPwdQuestion;
             user.PasswordAnswer = newPwdAnswer;
-            CurrentDatabase.SubmitChanges();
+            Db.SubmitChanges();
             return true;
         }
 
@@ -236,7 +190,7 @@ namespace CmsWeb.Membership
                  object providerUserKey,
                  out MembershipCreateStatus status)
         {
-            username = username?.Split('\\').LastOrDefault();
+            username = Util.GetUserName(username);
             var args = new ValidatePasswordEventArgs(username, password, true);
             OnValidatingPassword(args);
             if (args.Cancel)
@@ -249,25 +203,19 @@ namespace CmsWeb.Membership
                 status = MembershipCreateStatus.DuplicateEmail;
                 return null;
             }
-
+            var Db = GetDb();
             var u = GetUser(username, false);
             if (u == null)
             {
                 int? pid = null;
                 Person per = null;
                 if (providerUserKey != null && providerUserKey is int)
-                {
-                    per = CurrentDatabase.People.SingleOrDefault(p => p.PeopleId == (int)providerUserKey);
-                }
+                    per = Db.People.SingleOrDefault(p => p.PeopleId == (int)providerUserKey);
                 else
-                {
-                    per = CurrentDatabase.People.SingleOrDefault(p => p.EmailAddress == email);
-                }
+                    per = Db.People.SingleOrDefault(p => p.EmailAddress == email);
 
                 if (per != null)
-                {
                     pid = per.PeopleId;
-                }
 
                 var createDate = Util.Now;
                 var user = new User
@@ -290,16 +238,13 @@ namespace CmsWeb.Membership
                     FailedPasswordAnswerAttemptCount = 0,
                     FailedPasswordAnswerAttemptWindowStart = createDate,
                 };
-                CurrentDatabase.Users.InsertOnSubmit(user);
-                CurrentDatabase.SubmitChanges();
+                Db.Users.InsertOnSubmit(user);
+                Db.SubmitChanges();
                 status = MembershipCreateStatus.Success;
                 return GetUser(username, false);
             }
             else
-            {
                 status = MembershipCreateStatus.DuplicateUserName;
-            }
-
             return null;
         }
 
@@ -310,29 +255,17 @@ namespace CmsWeb.Membership
                 bool isApproved,
                 int? PeopleId)
         {
-            username = username?.Split('\\').LastOrDefault();
+            username = Util.GetUserName(username);
             var args = new ValidatePasswordEventArgs(username, password, true);
             OnValidatingPassword(args);
             if (args.Cancel)
-            {
                 return null;
-            }
-
             var u = GetUser(username, false);
             if (u == null)
-            {
                 return MakeNewUser(username, EncodePassword(password), email, isApproved, PeopleId);
-            }
-
             return null;
         }
-
         public static User MakeNewUser(string username, string password, string email, bool isApproved, int? PeopleId)
-        {
-            return provider.CreateNewUser(username, password, email, isApproved, PeopleId);
-        }
-
-        public User CreateNewUser(string username, string password, string email, bool isApproved, int? PeopleId)
         {
             var createDate = DateTime.Now;
             var user = new User
@@ -353,90 +286,78 @@ namespace CmsWeb.Membership
                 FailedPasswordAnswerAttemptCount = 0,
                 FailedPasswordAnswerAttemptWindowStart = createDate,
             };
-            CurrentDatabase.Users.InsertOnSubmit(user);
-            CurrentDatabase.SubmitChanges();
+            DbUtil.Db.Users.InsertOnSubmit(user);
+            DbUtil.Db.SubmitChanges();
             return user;
         }
 
         public override bool DeleteUser(string username, bool deleteAllRelatedData)
         {
-            username = username?.Split('\\').LastOrDefault();
-            var user = CurrentDatabase.Users.SingleOrDefault(u => u.Username == username);
-            CurrentDatabase.UserRoles.DeleteAllOnSubmit(user.UserRoles);
-            CurrentDatabase.Users.DeleteOnSubmit(user);
-            CurrentDatabase.SubmitChanges();
+            username = Util.GetUserName(username);
+            var Db = GetDb();
+            var user = Db.Users.SingleOrDefault(u => u.Username == username);
+            Db.UserRoles.DeleteAllOnSubmit(user.UserRoles);
+            Db.Users.DeleteOnSubmit(user);
+            Db.SubmitChanges();
             return true;
         }
 
         public override MembershipUserCollection GetAllUsers(int pageIndex, int pageSize, out int totalRecords)
         {
             var users = new MembershipUserCollection();
-            var q = CurrentDatabase.Users.AsQueryable();
+            var Db = GetDb();
+            var q = Db.Users.AsQueryable();
             totalRecords = q.Count();
             q = q.OrderBy(u => u.Username).Skip(pageIndex * pageSize).Take(pageSize);
             foreach (var u in q)
-            {
                 users.Add(GetMu(u));
-            }
-
             return users;
         }
 
         public override int GetNumberOfUsersOnline()
         {
-            var onlineSpan = new TimeSpan(0, WebMembership.UserIsOnlineTimeWindow, 0);
+            var onlineSpan = new TimeSpan(0, Membership.UserIsOnlineTimeWindow, 0);
             var compareTime = Util.Now.Subtract(onlineSpan);
-            return CurrentDatabase.Users.Count(u => u.LastActivityDate > compareTime);
+            var Db = GetDb();
+            return Db.Users.Count(u => u.LastActivityDate > compareTime);
         }
 
         public override string GetPassword(string username, string answer)
         {
-            username = username?.Split('\\').LastOrDefault();
+            username = Util.GetUserName(username);
             if (!EnablePasswordRetrieval)
-            {
                 throw new ProviderException("Password Retrieval Not Enabled.");
-            }
 
             if (PasswordFormat == MembershipPasswordFormat.Hashed)
-            {
                 throw new ProviderException("Cannot retrieve Hashed passwords.");
-            }
 
-            var user = CurrentDatabase.Users.SingleOrDefault(u => u.Username == username);
+            var Db = GetDb();
+            var user = Db.Users.SingleOrDefault(u => u.Username == username);
             if (user != null)
             {
                 if (user.IsLockedOut)
-                {
                     throw new MembershipPasswordException("The supplied user is locked out.");
-                }
             }
             else
-            {
                 throw new MembershipPasswordException("The supplied user name is not found.");
-            }
 
             if (RequiresQuestionAndAnswer && !CheckPassword(answer, user.PasswordAnswer))
             {
-                UpdateFailureCount(CurrentDatabase, user, "passwordAnswer");
+                UpdateFailureCount(Db, user, "passwordAnswer");
                 throw new MembershipPasswordException("Incorrect password answer.");
             }
             if (PasswordFormat == MembershipPasswordFormat.Encrypted)
-            {
                 return UnEncodePassword(user.Password);
-            }
-
             return user.Password;
         }
 
         public override MembershipUser GetUser(string username, bool userIsOnline)
         {
-            username = username?.Split('\\').LastOrDefault();
-            var q = CurrentDatabase.Users.Where(user => user.Username == username);
+            username = Util.GetUserName(username);
+            var Db = GetDb();
+            var q = Db.Users.Where(user => user.Username == username);
             if (q.Count() > 1)
-            {
                 throw new Exception("duplicate user: " + username);
-            }
-
             var u = q.SingleOrDefault();
             if (u != null)
             {
@@ -446,12 +367,9 @@ namespace CmsWeb.Membership
                     u.LastActivityDate = Util.Now;
                     string host = HttpContextFactory.Current.Request.Url.Host;
                     if (host.Length > 98)
-                    {
                         host = host.Substring(0, 98);
-                    }
-
                     u.Host = host;
-                    CurrentDatabase.SubmitChanges();
+                    Db.SubmitChanges();
                 }
                 return mu;
             }
@@ -460,7 +378,8 @@ namespace CmsWeb.Membership
 
         public override MembershipUser GetUser(object providerUserKey, bool userIsOnline)
         {
-            var u = CurrentDatabase.Users.SingleOrDefault(user =>
+            var Db = GetDb();
+            var u = Db.Users.SingleOrDefault(user =>
                 user.UserId == providerUserKey.ToInt());
             if (u != null)
             {
@@ -470,12 +389,9 @@ namespace CmsWeb.Membership
                     u.LastActivityDate = Util.Now;
                     string host = HttpContextFactory.Current.Request.Url.Host;
                     if (host.Length > 98)
-                    {
                         host = host.Substring(0, 98);
-                    }
-
                     u.Host = host;
-                    CurrentDatabase.SubmitChanges();
+                    Db.SubmitChanges();
                 }
                 return mu;
             }
@@ -500,42 +416,41 @@ namespace CmsWeb.Membership
         }
         public override bool UnlockUser(string username)
         {
-            username = username?.Split('\\').LastOrDefault();
-            var u = CurrentDatabase.Users.SingleOrDefault(user => user.Username == username);
+            var Db = GetDb();
+            username = Util.GetUserName(username);
+            var u = Db.Users.SingleOrDefault(user => user.Username == username);
             if (u != null)
             {
                 u.LastLockedOutDate = Util.Now;
                 u.IsLockedOut = false;
-                CurrentDatabase.SubmitChanges();
+                Db.SubmitChanges();
             }
             return u != null;
         }
 
         public override string GetUserNameByEmail(string email)
         {
-            return CurrentDatabase.Users.Single(u => u.Person.EmailAddress == email).Username;
+            var Db = GetDb();
+            return Db.Users.Single(u => u.Person.EmailAddress == email).Username;
         }
 
         public override string ResetPassword(string username, string answer)
         {
-            username = username?.Split('\\').LastOrDefault();
+            username = Util.GetUserName(username);
             if (!EnablePasswordReset)
-            {
                 throw new NotSupportedException("Password reset is not enabled.");
-            }
 
-            var user = CurrentDatabase.Users.SingleOrDefault(u => u.Username == username);
+            var db = GetDb();
+            var user = db.Users.SingleOrDefault(u => u.Username == username);
             if (user == null)
-            {
                 throw new MembershipPasswordException("The supplied user name is not found.");
-            }
 
             if (answer == null && RequiresQuestionAndAnswer)
             {
-                UpdateFailureCount(CurrentDatabase, user, "passwordAnswer");
+                UpdateFailureCount(db, user, "passwordAnswer");
                 throw new ProviderException("Password answer required for password reset.");
             }
-            var newPassword = WebMembership.GeneratePassword(newPasswordLength, MinRequiredNonAlphanumericCharacters);
+            var newPassword = Membership.GeneratePassword(newPasswordLength, MinRequiredNonAlphanumericCharacters);
 
             var args = new ValidatePasswordEventArgs(username, newPassword, true);
 
@@ -544,87 +459,66 @@ namespace CmsWeb.Membership
             if (args.Cancel)
             {
                 if (args.FailureInformation != null)
-                {
                     throw args.FailureInformation;
-                }
                 else
-                {
                     throw new MembershipPasswordException("Reset password canceled due to password validation failure.");
-                }
             }
 
             if (user.IsLockedOut)
-            {
                 throw new MembershipPasswordException("The supplied user is locked out.");
-            }
 
             if (RequiresQuestionAndAnswer && !CheckPassword(answer, user.PasswordAnswer))
             {
-                UpdateFailureCount(CurrentDatabase, user, "passwordAnswer");
+                UpdateFailureCount(db, user, "passwordAnswer");
                 throw new MembershipPasswordException("Incorrect password answer.");
             }
 
             user.Password = EncodePassword(newPassword);
             user.LastPasswordChangedDate = Util.Now;
-            ApiSessionModel.DeleteSession(CurrentDatabase, user);
-            CurrentDatabase.SubmitChanges();
+            ApiSessionModel.DeleteSession(db, user);
+            db.SubmitChanges();
             return newPassword;
         }
 
         public override void UpdateUser(MembershipUser user)
         {
-            var u = CurrentDatabase.Users.SingleOrDefault(us => us.Username == user.UserName);
+            var Db = GetDb();
+            var u = Db.Users.SingleOrDefault(us => us.Username == user.UserName);
             u.IsApproved = user.IsApproved;
             //u.Person.EmailAddress = user.Email;
             u.Comment = user.Comment;
-            CurrentDatabase.SubmitChanges();
+            Db.SubmitChanges();
         }
 
         public override bool ValidateUser(string username, string password)
         {
             try
             {
-                username = username?.Split('\\').LastOrDefault();
-                var user = CurrentDatabase.Users.FirstOrDefault(u =>
+                var Db = GetDb();
+                username = Util.GetUserName(username);
+                var user = Db.Users.FirstOrDefault(u =>
                     u.Username == username
                     || u.EmailAddress == username
                     || u.Person.EmailAddress2 == username
                     );
                 if (user == null)
-                {
                     return false;
-                }
-
                 if (CheckPassword(password, user.Password))
-                {
                     if (user.IsApproved)
                     {
                         user.LastLoginDate = Util.Now;
                         user.FailedPasswordAttemptCount = 0;
                         if (user.IsLockedOut && user.FailedPasswordAttemptWindowStart.HasValue)
-                        {
                             if ((DateTime.Now - user.FailedPasswordAttemptWindowStart.Value).TotalMinutes > 3)
-                            {
                                 user.IsLockedOut = false;
-                            }
-                        }
-
-                        CurrentDatabase.SubmitChanges();
+                        Db.SubmitChanges();
                         return true;
                     }
-                }
-
-                UpdateFailureCount(CurrentDatabase, user, "password");
+                UpdateFailureCount(Db, user, "password");
                 return false;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                var errorlog = RequestManager.GetErrorLog();
-                if (errorlog == null)
-                {
-                    throw;
-                }
-                errorlog.Log(new Elmah.Error(ex));
                 return false;
             }
         }
@@ -663,14 +557,9 @@ namespace CmsWeb.Membership
                 user.LastLockedOutDate = DateTime.Now;
             }
             else if (failureType == "password")
-            {
                 user.FailedPasswordAttemptCount = failureCount;
-            }
             else if (failureType == "passwordAnswer")
-            {
                 user.FailedPasswordAnswerAttemptCount = failureCount;
-            }
-
             Db.SubmitChanges();
         }
 
@@ -679,10 +568,7 @@ namespace CmsWeb.Membership
             string pass1 = password;
             string pass2 = dbpassword;
             if (dbpassword == "" && password == "bvcms")
-            {
                 return true;
-            }
-
             switch (PasswordFormat)
             {
                 case MembershipPasswordFormat.Encrypted:
@@ -700,10 +586,7 @@ namespace CmsWeb.Membership
         private string EncodePassword(string password)
         {
             if (!password.HasValue())
-            {
                 return "";
-            }
-
             string encodedPassword = password;
             switch (PasswordFormat)
             {
@@ -748,96 +631,76 @@ namespace CmsWeb.Membership
         {
             byte[] returnBytes = new byte[hexString.Length / 2];
             for (int i = 0; i < returnBytes.Length; i++)
-            {
                 returnBytes[i] = Convert.ToByte(hexString.Substring(i * 2, 2), 16);
-            }
-
             return returnBytes;
         }
 
         public override MembershipUserCollection FindUsersByName(string usernameToMatch, int pageIndex, int pageSize, out int totalRecords)
         {
             var users = new MembershipUserCollection();
-            var q = from u in CurrentDatabase.Users select u;
+            var Db = GetDb();
+            var q = from u in Db.Users select u;
 
             bool left = usernameToMatch.StartsWith("%");
             bool right = usernameToMatch.EndsWith("%");
             usernameToMatch = usernameToMatch.Trim('%');
             if (left && right)
-            {
                 q = q.Where(u => u.Username.Contains(usernameToMatch));
-            }
             else if (left)
-            {
                 q = q.Where(u => u.Username.EndsWith(usernameToMatch));
-            }
             else if (right)
-            {
                 q = q.Where(u => u.Username.StartsWith(usernameToMatch));
-            }
 
             totalRecords = q.Count();
             q = q.OrderBy(u => u.Username).Skip(pageIndex * pageSize).Take(pageSize);
             foreach (var u in q)
-            {
                 users.Add(GetMu(u));
-            }
-
             return users;
         }
 
         public override MembershipUserCollection FindUsersByEmail(string emailToMatch, int pageIndex, int pageSize, out int totalRecords)
         {
             var users = new MembershipUserCollection();
-            var q = from u in CurrentDatabase.Users select u;
+            var Db = GetDb();
+            var q = from u in Db.Users select u;
 
             bool left = emailToMatch.StartsWith("%");
             bool right = emailToMatch.EndsWith("%");
             emailToMatch = emailToMatch.Trim('%');
             if (left && right)
-            {
                 q = q.Where(u => u.Person.EmailAddress.Contains(emailToMatch));
-            }
             else if (left)
-            {
                 q = q.Where(u => u.Person.EmailAddress.EndsWith(emailToMatch));
-            }
             else if (right)
-            {
                 q = q.Where(u => u.Person.EmailAddress.StartsWith(emailToMatch));
-            }
 
             totalRecords = q.Count();
             q = q.OrderBy(u => u.Username).Skip(pageIndex * pageSize).Take(pageSize);
             foreach (var u in q)
-            {
                 users.Add(GetMu(u));
-            }
-
             return users;
         }
         public void MustChangePassword(string username, bool tf)
         {
-            username = username?.Split('\\').LastOrDefault();
-            var user = CurrentDatabase.Users.Single(u => u.Username == username);
+            username = Util.GetUserName(username);
+            var Db = GetDb();
+            var user = Db.Users.Single(u => u.Username == username);
             user.MustChangePassword = tf;
-            CurrentDatabase.SubmitChanges();
+            Db.SubmitChanges();
         }
         public bool MustChangePassword(string username)
         {
-            username = username?.Split('\\').LastOrDefault();
-            var user = CurrentDatabase.Users.SingleOrDefault(u => u.Username == username);
+            username = Util.GetUserName(username);
+            var Db = GetDb();
+            var user = Db.Users.SingleOrDefault(u => u.Username == username);
             if (user == null)
-            {
                 return false;
-            }
-
             return user.MustChangePassword;
         }
         public bool UserMustChangePassword
         {
-            get => MustChangePassword(Util.UserName);
-            set => MustChangePassword(Util.UserName, value);
+            get { return MustChangePassword(Util.UserName); }
+            set { MustChangePassword(Util.UserName, value); }
         }
     }
 }

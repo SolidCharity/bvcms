@@ -1,5 +1,5 @@
-﻿using CmsWeb.Lifecycle;
-using CmsWeb.Membership;
+﻿using CmsData;
+using CmsWeb.Lifecycle;
 using CmsWeb.Services.MeetingCategory;
 using SimpleInjector;
 using SimpleInjector.Integration.Web;
@@ -27,12 +27,12 @@ namespace CmsWeb
             container.Register(() => new Lazy<IPrincipal>(() => HttpContext.Current.User));
             container.Register(() => new Lazy<MembershipProvider>(() => CMSMembershipProvider.provider));
             container.Register(() => new Lazy<RoleProvider>(() => CMSRoleProvider.provider));
-
+/*   TODO:  May not need this
             container.RegisterInitializer<IRequestManager>(instance => {
                 CMSMembershipProvider.provider.RequestManager = instance;
                 CMSRoleProvider.provider.RequestManager = instance;
             });
-
+*/
             container.RegisterWebApiControllers(GlobalConfiguration.Configuration);
             container.RegisterMvcControllers(Assembly.GetExecutingAssembly());
 

@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Web;
 using System.Web.Mvc;
+using System.Xml.Serialization;
 using CmsData;
 using CmsData.Classes;
 using CmsData.Finance;
@@ -14,6 +15,7 @@ using CmsWeb.Areas.OnlineReg.Controllers;
 using CmsWeb.Code;
 using Dapper;
 using Microsoft.Scripting.Utils;
+using Newtonsoft.Json;
 using UtilityExtensions;
 
 namespace CmsWeb.Areas.OnlineReg.Models
@@ -38,6 +40,32 @@ namespace CmsWeb.Areas.OnlineReg.Models
                 NoCreditCardsAllowed = CurrentDatabase.Setting("NoCreditCardGiving", "false").ToBool();
                 NoEChecksAllowed = CurrentDatabase.Setting("NoEChecksAllowed", "false").ToBool();
             }
+        }
+
+        [NonSerialized]
+        private CMSDataContext _currentDatabase;
+        private CMSDataContext CurrentDatabase
+        {
+            get => _currentDatabase ?? (CurrentDatabase = DbUtil.Db);
+            set
+            {
+                if (_currentDatabase == null)
+                {
+                    _currentDatabase = value;
+
+                    HeadingLabel = CurrentDatabase.Setting("ManageGivingHeaderLabel", "Giving Opportunities");
+#if DEBUG2
+            testing = true;
+#endif
+                    NoCreditCardsAllowed = CurrentDatabase.Setting("NoCreditCardGiving", "false").ToBool();
+                    NoEChecksAllowed = CurrentDatabase.Setting("NoEChecksAllowed", "false").ToBool();
+                }
+            }
+        }
+
+        public void SetCurrentDatabase(CMSDataContext db)
+        {
+            CurrentDatabase = db;
         }
 
         public IList<string> DefaultFundIds = new List<string>();

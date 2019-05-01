@@ -2,7 +2,6 @@ using CmsData;
 using CmsData.API;
 using CmsWeb.Areas.People.Models;
 using CmsWeb.Lifecycle;
-using CmsWeb.Membership;
 using CmsWeb.Models;
 using System;
 using System.IO;
@@ -85,10 +84,10 @@ namespace CmsWeb.Areas.Public.Controllers
             var rootUrl = CurrentDatabase.ServerLink();
             if (url.StartsWith(rootUrl))
             {
-                url = url.Substring(rootUrl.Length - (rootUrl.EndsWith("/") ? 1 : 0));
+                url = url.Substring(rootUrl.Length);
             }
 
-            return $"{rootUrl}Logon?ReturnUrl={HttpUtility.UrlEncode(url)}&otltoken={ot.Id.ToCode()}";
+            return $"{rootUrl}/Logon?ReturnUrl={HttpUtility.UrlEncode(url)}&otltoken={ot.Id.ToCode()}";
         }
 
         [HttpPost]

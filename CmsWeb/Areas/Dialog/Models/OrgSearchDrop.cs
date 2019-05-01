@@ -27,9 +27,9 @@ namespace CmsWeb.Areas.Dialog.Models
         public int OrgCount { get; set; }
 
         public OrgSearchDrop() { }
-        public OrgSearchDrop(OrgSearchModel m, string host)
+        public OrgSearchDrop(OrgSearchModel m)
         {
-            Host = host;
+
             QueryId = Guid.NewGuid();
             var q = (from o in m.FetchOrgs()
                      select new OrgInfo
@@ -50,7 +50,6 @@ namespace CmsWeb.Areas.Dialog.Models
             orginfos = JsonConvert.DeserializeObject<List<OrgInfo>>(Orgs);
             var lop = new LongRunningOperation()
             {
-                Host = db.Host,
                 Started = DateTime.Now,
                 Count = orginfos.Count,
                 Processed = 0,
@@ -80,6 +79,8 @@ namespace CmsWeb.Areas.Dialog.Models
                 foreach (var pid in pids)
                 {
                     n++;
+                    //DbUtil.Db.Dispose();
+                    //db = CMSDataContext.Create(model.Host);
                     var om = db.OrganizationMembers.Single(mm => mm.PeopleId == pid && mm.OrganizationId == orginfo.Id);
                     if (DropDate.HasValue)
                     {
