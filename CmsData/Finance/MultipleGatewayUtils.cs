@@ -15,10 +15,10 @@ namespace CmsData
             this.db = db;
         }
 
-        public static SelectList GatewayTypesList()
+        public static SelectList GatewayGatewayAccountList()
         {
-            List<string> list = CMSDataContext.Create(HttpContextFactory.Current).Gateways
-                .Select(g => g.GatewayName).ToList();
+            List<string> list = CMSDataContext.Create(HttpContextFactory.Current).GatewayAccount
+                .Select(g => g.GatewayAccountName).ToList();
             list.Insert(0, "");
             return new SelectList(list);
         }
