@@ -190,8 +190,12 @@ Please contact the Finance office at the church."
                         (pi.PreferredGivingType == "C" && pi.TbnCardVaultId.HasValue))
                         return db.Gateway(IsTesting, GivingProcess);
                     break;
-                // case (int)GatewayTypes.Acceptiva:
-                // break;
+                case (int)GatewayTypes.Acceptiva:
+                    IsTesting = MultipleGatewayUtils.GatewayTesting(db, GivingProcess);
+                    if ((pi.PreferredGivingType == "B") ||
+                        (pi.PreferredGivingType == "C"))
+                        return db.Gateway(IsTesting, GivingProcess);
+                    break;
                 case (int)GatewayTypes.BluePay:
                     IsTesting = MultipleGatewayUtils.GatewayTesting(db, GivingProcess);
                     if ((pi.PreferredGivingType == "B") ||
