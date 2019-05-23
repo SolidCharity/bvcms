@@ -160,7 +160,14 @@ Please contact the Finance office at the church."
         }
         private IGateway GetGateway(CMSDataContext db, PaymentInfo pi)
         {
-            int? GatewayId = MultipleGatewayUtils.GatewayId(db, PaymentProcessTypes.RecurringGiving);
+            var GivingProcess = PaymentProcessTypes.RecurringGiving;
+
+            if (MultipleGatewayUtils.GatewayId(db, PaymentProcessTypes.TemporaryRecurringGiving) != null)
+            {
+                GivingProcess = PaymentProcessTypes.TemporaryRecurringGiving;
+            }
+
+            int? GatewayId = MultipleGatewayUtils.GatewayId(db, GivingProcess);
 
             if (GatewayId.IsNull())
                 throw new Exception("This process does not have a gateway configured");
@@ -172,31 +179,31 @@ Please contact the Finance office at the church."
                 // case (int)GatewayTypes.Pushpay:
                 // break;
                 case (int)GatewayTypes.Sage:
-                    IsTesting = MultipleGatewayUtils.GatewayTesting(db, PaymentProcessTypes.RecurringGiving);
+                    IsTesting = MultipleGatewayUtils.GatewayTesting(db, GivingProcess);
                     if ((pi.PreferredGivingType == "B" && pi.SageBankGuid.HasValue) ||
                         (pi.PreferredGivingType == "C" && pi.SageCardGuid.HasValue))
-                        return db.Gateway(IsTesting, PaymentProcessTypes.RecurringGiving);
+                        return db.Gateway(IsTesting, GivingProcess);
                     break;
                 case (int)GatewayTypes.Transnational:
-                    IsTesting = MultipleGatewayUtils.GatewayTesting(db, PaymentProcessTypes.RecurringGiving);
+                    IsTesting = MultipleGatewayUtils.GatewayTesting(db, GivingProcess);
                     if ((pi.PreferredGivingType == "B" && pi.TbnBankVaultId.HasValue) ||
                         (pi.PreferredGivingType == "C" && pi.TbnCardVaultId.HasValue))
-                        return db.Gateway(IsTesting, PaymentProcessTypes.RecurringGiving);
+                        return db.Gateway(IsTesting, GivingProcess);
                     break;
                 // case (int)GatewayTypes.Acceptiva:
                 // break;
                 case (int)GatewayTypes.BluePay:
-                    IsTesting = MultipleGatewayUtils.GatewayTesting(db, PaymentProcessTypes.RecurringGiving);
+                    IsTesting = MultipleGatewayUtils.GatewayTesting(db, GivingProcess);
                     if ((pi.PreferredGivingType == "B") ||
                         (pi.PreferredGivingType == "C" && string.IsNullOrEmpty(pi.BluePayCardVaultId)))
-                        return db.Gateway(IsTesting, PaymentProcessTypes.RecurringGiving);
+                        return db.Gateway(IsTesting, GivingProcess);
                     break;
                 default:
                     break;
             }
 
             // fall back to temporary gateway because the user hasn't migrated their payments off of the temporary gateway yet
-            return db.Gateway(IsTesting, PaymentProcessTypes.RecurringGiving);
+            return db.Gateway(IsTesting, GivingProcess);
         }
         public static int DoAllGiving(CMSDataContext Db)
         {
