@@ -24,6 +24,7 @@ namespace CmsWeb.Areas.Dialog.Controllers
             ViewBag.OrigQueryId = id;
             var m = new QueryModel(id, CurrentDatabase);
             ViewBag.ForceAutoRun = TempData["autorun"];
+
             return View(m);
         }
 
