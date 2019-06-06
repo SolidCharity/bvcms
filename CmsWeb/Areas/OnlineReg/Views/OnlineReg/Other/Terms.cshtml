@@ -70,8 +70,11 @@
 @Html.Raw(Model.Terms)
 <form action="/OnlineReg/Confirm/@Model.DatumId" method="post">
   @Html.Hidden("TransactionID", "zero due")
-    <p>@Html.CheckBox("IAgree") I agree to the above terms and conditions.</p>
-    @Html.Raw(OnlineRegModel.YouMustAgreeStatement(Model.Orgid)) 
+    @*<p>@Html.CheckBox("IAgree") I agree to the above terms and conditions.</p>*@
+    @Html.Raw(OnlineRegModel.YouMustAgreeStatement(Model.Orgid))
+    <p>I agree to the terms and conditions.</p>
+    <p>Full name: <input type="text" /></p>
+    <input type="button" value="Accept" />
   <p></p>
   <p><input type="submit" id="Submit" value="@Model.GetFinishRegistrationButton()" /></p>
 </form>
