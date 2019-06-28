@@ -258,7 +258,7 @@ namespace CmsData.Finance
             {
                 batchTransactions.Add(new BatchTransaction
                 {
-                    TransactionId = int.Parse(item.Response.Items[0].Id),
+                    TransactionId = int.Parse(item.Response.Items[0].Id.Remove(0, 11)),
                     Reference = item.Response.TransIdStr,
                     BatchReference = GetBatchReference(start, end),
                     TransactionType = GetTransactionType(item.Response.AmtProcessed),
