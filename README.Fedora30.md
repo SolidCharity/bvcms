@@ -4,7 +4,8 @@ Build on Fedora 30
 
 Preparations:
 
-    dnf install git wget curl make
+    dnf install git wget curl make npm
+    npm install -g gulp
 
     # need to install Mono from Microsoft, because it has csc and msbuild
     # see https://www.mono-project.com/download/stable/#download-lin-fedora

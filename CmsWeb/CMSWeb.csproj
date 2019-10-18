@@ -3421,8 +3421,8 @@
   </ProjectExtensions>
   <PropertyGroup>
     <PreBuildEvent>pushd $(ProjectDir)
-call npm install --silent
-call gulp --no-color
+npm install --silent
+gulp --no-color
 popd</PreBuildEvent>
   </PropertyGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
