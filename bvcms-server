@@ -1,0 +1,40 @@
+#!/bin/bash
+documentroot=/root/bvcms/CmsWeb
+port=9000
+
+# start the server
+start() {
+    echo "Starting bvcms server"
+    cd $documentroot
+    LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$documentroot/bin fastcgi-mono-server4 /socket=tcp:127.0.0.1:$port /applications=/:$documentroot /logfile=/var/log/mono.log /loglevels=Standard >& /dev/null &
+
+    # this process must not end, otherwise systemd stops the server
+    tail -f /dev/null
+}
+
+# stop the server
+stop() {
+    echo "Stopping bvcms server"
+    killall mono
+}
+
+case "$1" in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    restart)
+        stop
+        sleep 3
+        start
+        ;;
+    *)
+        echo "Usage: $0 {start|stop|restart}"
+        exit 1
+        ;;
+esac
+
+exit 0
+

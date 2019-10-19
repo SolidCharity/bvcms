@@ -11,7 +11,7 @@ Preparations:
     # see https://www.mono-project.com/download/stable/#download-lin-fedora
     rpm --import "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF"
     curl https://download.mono-project.com/repo/centos8-stable.repo | tee /etc/yum.repos.d/mono-centos8-stable.repo
-    dnf install mono-devel
+    dnf install mono-devel xsp-4.5-0.xamarin.2.epel8
 
     # see https://docs.microsoft.com/de-de/nuget/install-nuget-client-tools#macoslinux
     curl -o /usr/local/bin/nuget.exe https://dist.nuget.org/win-x86-commandline/latest/nuget.exe
@@ -22,3 +22,5 @@ Preparations:
 
     make nuget
     make build
+    make run
+    # see http://localhost:8080
