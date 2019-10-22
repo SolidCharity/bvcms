@@ -6,6 +6,7 @@
  */
 using Dapper;
 using System;
+using System.Configuration;
 using System.Data.SqlClient;
 using System.IO;
 using System.Linq;
@@ -13,18 +14,38 @@ using System.Text.RegularExpressions;
 using System.Web;
 using System.Web.Caching;
 using UtilityExtensions;
+using Savage.Data.MySqlClient;
 
 namespace CmsData
 {
     public static partial class DbUtil
     {
-        public static bool DatabaseExistsMySQL(string name)
+        /// <summary>
+        /// Creates a MySqlConnection connection.
+        /// </summary>
+        /// <param name="ADatabaseName">Name of the database that we want to connect to. It can be an empty string.</param>
+        /// <returns>
+        /// Instantiated MySqlConnection, but not opened yet (null if connection could not be established).
+        /// </returns>
+        private static SqlConnection GetConnection(String ADatabaseName = "")
         {
-            return DatabaseExistsMySQL(Util.GetConnectionString2("master", 3), name);
+            string HostName = ConfigurationManager.AppSettings["dbhost"];
+            string UserName = ConfigurationManager.AppSettings["dbuser"];
+            string Pwd = ConfigurationManager.AppSettings["dbpwd"];
+            string ConnectionString = "SERVER=" + HostName + ";";
+            if ((ADatabaseName.Length > 0) && (ADatabaseName != "master"))
+            {
+                ConnectionString += "DATABASE=" + ADatabaseName + ";";
+            }
+            ConnectionString += "Convert Zero Datetime=True;"+"UID=" +
+                UserName + ";" + "PASSWORD=";
+
+            return new DbClient(ConnectionString + Pwd + ";");
         }
-        public static bool DatabaseExistsMySQL(string mastercs, string name)
+
+        private static bool DatabaseExistsMySQL(string name)
         {
-            using (var cn = new SqlConnection(mastercs))
+            using (var cn = GetConnection())
             {
                 cn.Open();
                 return DatabaseExistsMySQL(cn, name);
@@ -34,8 +55,7 @@ namespace CmsData
         public static bool DatabaseExistsMySQL(SqlConnection cn, string name)
         {
             var cmd = new SqlCommand(
-                    "SELECT CAST(CASE WHEN EXISTS(SELECT NULL FROM sys.databases WHERE name = '"
-                    + name + "') THEN 1 ELSE 0 END AS BIT)", cn);
+                    "SELECT 1 AS RESULT FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '" + name + "'", cn);
             return (bool)cmd.ExecuteScalar();
         }
 
@@ -44,27 +64,6 @@ namespace CmsData
             DatabaseExists,
             DatabaseDoesNotExist,
             ServerNotFound
-        }
-
-        public static void EnableClr(SqlConnection cn)
-        {
-            var s = @"SELECT value FROM sys.configurations WHERE name = 'clr enabled'";
-            var cmd = new SqlCommand(s, cn);
-            if (cmd.ExecuteScalar().ToBool())
-            {
-                return;
-            }
-
-            RunScripts(cn, @"
-sp_configure 'show advanced options', 1;
-GO
-RECONFIGURE;
-GO
-sp_configure 'clr enabled', 1;
-GO
-RECONFIGURE;
-GO
-");
         }
 
         public static CheckDatabaseResult CheckDatabaseExistsMySQL(string name, bool nocache = false)
@@ -78,13 +77,11 @@ GO
                 }
             }
 
-            using (var cn = new SqlConnection(Util.GetConnectionString2("master", 3)))
+            using (var b = DatabaseExistsMySQL(name))
             {
                 CheckDatabaseResult ret;
                 try
                 {
-                    cn.Open();
-                    var b = DatabaseExistsMySQL(cn, name);
                     ret = b ? CheckDatabaseResult.DatabaseExists : CheckDatabaseResult.DatabaseDoesNotExist;
                 }
                 catch (Exception ex)
@@ -114,10 +111,12 @@ GO
             var server = HttpContextFactory.Current.Server;
             var path = server.MapPath("/");
             var sqlScriptsPath = path + @"..\SqlScripts\";
-            var cs = Util.GetConnectionString2("master");
 
-            var retVal = CreateDatabaseMySQL(host, sqlScriptsPath, cs, Util.ConnectionStringImage,
-                Util.GetConnectionString2("Elmah"), Util.ConnectionString);
+            var retVal = CreateDatabaseMySQL(host, sqlScriptsPath,
+               "master",
+               "CMSi_" + host,
+               "Elmah",
+               "CMS_" + host);
 
             HttpRuntime.Cache.Remove(host + "-DatabaseExists");
             HttpRuntime.Cache.Remove(host + "-CheckDatabaseResult");
@@ -132,10 +131,10 @@ GO
             {
                 RunScripts(masterConnectionString, "create database CMS_" + hostName);
 
-                using (var cn = new SqlConnection(masterConnectionString))
+                using (var cn = GetConnection())
                 {
                     cn.Open();
-                    EnableClr(cn);
+                    //EnableClr(cn);
                     if (!DatabaseExistsMySQL(cn, "CMSi_" + hostName))
                     {
                         RunScripts(masterConnectionString, "create database CMSi_" + hostName);
@@ -153,7 +152,7 @@ GO
                     }
                 }
 
-                using (var cn = new SqlConnection(standardConnectionString))
+                using (var cn = GetConnection(standardConnectionString))
                 {
                     cn.Open();
                     var list = File.ReadAllLines(Path.Combine(sqlScriptsPath, "allscripts.txt"));
@@ -228,9 +227,9 @@ GO
             }
         }
 
-        public static void RunScripts(string cs, string script)
+        public static void RunScripts(string name, string script)
         {
-            using (var cn = new SqlConnection(cs))
+            using (var cn = GetConnection(name))
             {
                 cn.Open();
                 RunScripts(cn, script);
