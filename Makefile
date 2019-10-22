@@ -18,3 +18,6 @@ nuget:
 
 run:
 	cd CmsWeb && xsp4 --port 8080
+
+cmsdata:
+	msbuild CmsData/CmsData.csproj /p:Configuration=Debug /p:Platform=AnyCPU

@@ -106,7 +106,7 @@ namespace CmsWeb
             }
 
             var host = CMSDataContext.GetHost(new HttpContextWrapper(Context));
-            var r = DbUtil.CheckDatabaseExists($"CMS_{host}");
+            var r = DbUtil.CheckDatabaseExistsMySQL($"CMS_{host}");
             var redirect = ViewExtensions2.DatabaseErrorUrl(r);
             if (Util.IsDebug())
             {
@@ -117,7 +117,7 @@ namespace CmsWeb
                 }
                 if (r == DbUtil.CheckDatabaseResult.DatabaseDoesNotExist && "localhost".Equal(Request.Url.Host))
                 {
-                    var ret = DbUtil.CreateDatabase(host);
+                    var ret = DbUtil.CreateDatabaseMySQL(host);
                     if (ret.HasValue())
                     {
                         Response.Redirect($"/Errors/DatabaseCreationError.aspx?error={HttpUtility.UrlEncode(ret)}");
